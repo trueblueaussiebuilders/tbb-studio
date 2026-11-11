@@ -39,6 +39,13 @@ jobs:
           echo "file=${slug}-${{ github.run_id }}.mp4" >> "$GITHUB_OUTPUT"
           if [ -z "$slug" ]; then echo "::warning::Queue is empty. Nothing to post. Merge the next batch PR."; fi
 
+      - uses: actions/setup-python@v5
+
+        with:
+
+          python-version: "3.11"
+
+
       - name: Install
         if: steps.pick.outputs.slug != ''
         run: bash tools/install.sh
