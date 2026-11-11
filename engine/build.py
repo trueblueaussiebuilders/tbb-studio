@@ -34,6 +34,13 @@ def _render_scene(args):
     return final
 
 
+def write_cover(outdir, slug):
+    png = os.path.join(outdir, f"{slug}.cover.png")
+    bp.draw_cover(SPEC, TL).write_to_png(png)
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", png, "-q:v", "2", png[:-4] + ".jpg"], check=True)
+    os.remove(png)
+
+
 def main():
     global SPEC, TL
     ap = argparse.ArgumentParser()
@@ -54,6 +61,7 @@ def main():
         TL = bp.Timeline(tim)
         for t in a.frames:
             bp.draw_frame(SPEC, TL, t).write_to_png(os.path.join(a.out, f"{slug}_t{t}.png"))
+        bp.draw_cover(SPEC, TL).write_to_png(os.path.join(a.out, f"{slug}_cover.png"))
         return
 
     print(f"[{slug}] voice: {voice.engine_name()}")
@@ -77,6 +85,7 @@ def main():
                         "-shortest", "-movflags", "+faststart", final + ".tmp.mp4"], check=True)
         os.replace(final + ".tmp.mp4", final)
     open(os.path.join(a.out, f"{slug}.caption.txt"), "w").write(SPEC.CAPTION)
+    write_cover(a.out, slug)
     print(f"[{slug}] -> {final}")
 
 

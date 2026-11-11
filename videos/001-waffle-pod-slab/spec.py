@@ -8,6 +8,7 @@ META = {
     "dwg": "001",
     "hook": ["THERE'S POLYSTYRENE", "UNDER A LOT OF", "NEW HOUSES."],
     "hook_sub": "HERE'S HOW THE SLAB GOES IN",
+    "cover": ["WHAT'S UNDER", "A NEW HOUSE?"],
     "steps": [
         ("SITE SCRAPE & LEVEL", "Topsoil stripped and the building pad cut and levelled to design level."),
         ("COMPACTED PAD", "Sand or crushed rock bed placed, compacted and screeded flat."),

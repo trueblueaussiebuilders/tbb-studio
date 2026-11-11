@@ -292,3 +292,27 @@ def draw_frame(spec, tl, t):
         if M.get("next"):
             text(ctx, M["next"], W / 2, 1065, 32, YEL, alpha=k2, bold=True, anchor="c")
     return s
+
+
+# ---------------------------------------------------------------- cover / thumbnail
+def draw_cover(spec, tl):
+    """Reel cover: big headline + finished drawing + title strip.
+    Key content sits inside the centre 1080x1440 so the 3:4 profile-grid crop keeps it."""
+    M = spec.META
+    s = cairo.ImageSurface(cairo.FORMAT_RGB24, W, H); ctx = cairo.Context(s)
+    ctx.set_source_surface(background()); ctx.paint()
+    text(ctx, M.get("series", SERIES), W / 2, 300, 30, YEL, bold=True, anchor="c", spacing=6)
+    lines = M.get("cover", M["hook"][:2])
+    size = 92 if max(len(l) for l in lines) <= 16 else 74
+    for i, line in enumerate(lines):
+        text(ctx, line, W / 2, 400 + i * (size + 18), size, WHITE, bold=True, anchor="c")
+    # finished drawing, scaled into the middle band
+    ctx.save(); ctx.translate(81, 330 + (len(lines) - 2) * 60); ctx.scale(0.85, 0.85)
+    spec.draw_section(ctx, tl.end0 - 0.05, tl)
+    ctx.restore()
+    # title strip
+    y = 1420
+    ctx.set_source_rgba(*YEL, 1); ctx.rectangle(90, y, 900, 120); ctx.fill()
+    text(ctx, M["title"], W / 2, y + 62, 56 if len(M["title"]) <= 22 else 46, BG, bold=True, anchor="c")
+    text(ctx, "HOW IT'S BUILT  //  STEP BY STEP", W / 2, y + 100, 24, BG, bold=True, anchor="c", spacing=2)
+    return s

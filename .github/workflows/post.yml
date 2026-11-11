@@ -28,6 +28,8 @@ jobs:
       file: ${{ steps.pick.outputs.file }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main   # latest queue/posted state, not the commit the run was triggered on
 
       - id: pick
         name: Pick next video from queue
@@ -59,6 +61,7 @@ jobs:
           python -m engine.build "videos/${{ steps.pick.outputs.slug }}" --out build
           mkdir -p site
           cp "build/${{ steps.pick.outputs.slug }}.mp4" "site/${{ steps.pick.outputs.file }}"
+          cp "build/${{ steps.pick.outputs.slug }}.cover.jpg" "site/${{ steps.pick.outputs.slug }}-${{ github.run_id }}.jpg"
           echo "True Blue Builds" > site/index.html
 
       - uses: actions/upload-artifact@v4
@@ -92,6 +95,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/download-artifact@v4
         with:
@@ -118,6 +123,7 @@ jobs:
           python3 publish/instagram.py post \
             --video-url "${{ steps.url.outputs.url }}" \
             --caption-file "build/${{ needs.build.outputs.slug }}.caption.txt" \
+            --cover-url "${{ needs.host.outputs.page_url }}${{ needs.build.outputs.slug }}-${{ github.run_id }}.jpg" \
             --id-file media_id.txt
 
       - name: Log as posted

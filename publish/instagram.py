@@ -44,9 +44,11 @@ def call(method, path, params, versioned=True):
         sys.exit(f"Instagram API error {e.code} on {path}: {body}")
 
 
-def post(video_url, caption):
+def post(video_url, caption, cover_url=None):
     uid = os.environ["IG_USER_ID"].strip()
-    c = call("POST", f"{uid}/media", {"media_type": "REELS", "video_url": video_url, "caption": caption, "share_to_feed": "true"})
+    params = {"media_type": "REELS", "video_url": video_url, "caption": caption, "share_to_feed": "true"}
+    if cover_url: params["cover_url"] = cover_url
+    c = call("POST", f"{uid}/media", params)
     cid = c["id"]; print("container", cid)
     for _ in range(60):                       # up to ~10 min for Instagram to fetch + process the video
         st = call("GET", cid, {"fields": "status_code,status"})
@@ -66,12 +68,12 @@ def post(video_url, caption):
 def main():
     ap = argparse.ArgumentParser(); sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("post"); p.add_argument("--video-url", required=True); p.add_argument("--caption-file", required=True)
-    p.add_argument("--id-file")
+    p.add_argument("--id-file"); p.add_argument("--cover-url")
     r = sub.add_parser("refresh"); r.add_argument("--out", required=True)
     sub.add_parser("check")
     a = ap.parse_args()
     if a.cmd == "post":
-        mid = post(a.video_url, open(a.caption_file).read().strip())
+        mid = post(a.video_url, open(a.caption_file).read().strip(), a.cover_url)
         if a.id_file: open(a.id_file, "w").write(mid)
     elif a.cmd == "refresh":
         if token().startswith("EA"):
