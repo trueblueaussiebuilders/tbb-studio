@@ -4,3 +4,5 @@
 002-tilt-up-panel
 003-brick-veneer
 004-timber-wall-frame
+005-super-t-bridge
+006-remove-load-bearing-wall
