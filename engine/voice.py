@@ -83,13 +83,53 @@ def _cfg():
 
 def engine_name():
     """voice.json decides. ElevenLabs is only used when chosen there and a key is set."""
-    if _cfg().get("engine") == "elevenlabs" and os.environ.get("ELEVENLABS_API_KEY", "").strip():
-        return "elevenlabs"
-    return "kokoro"
+    eng = os.environ.get("VOICE_ENGINE") or _cfg().get("engine", "kokoro")
+    if eng == "elevenlabs" and not os.environ.get("ELEVENLABS_API_KEY", "").strip():
+        return "kokoro"
+    return eng
+
+
+def _reference_wav():
+    """Decrypt the voice reference sample (kept encrypted because the repo is public)."""
+    key = os.environ.get("VOICE_KEY", "").strip()
+    if not key:
+        raise SystemExit("VOICE_KEY secret is missing, so the voice sample can't be unlocked.")
+    enc = os.path.join(ROOT, _cfg()["chatterbox"]["reference"])
+    out = os.path.join(os.environ.get("RUNNER_TEMP", "/tmp"), "voice_ref.wav")
+    r = subprocess.run(["openssl", "enc", "-d", "-aes-256-cbc", "-pbkdf2", "-iter", "200000", "-in", enc, "-out", out,
+                        "-pass", "env:VOICE_KEY"], capture_output=True)
+    if r.returncode != 0:
+        raise SystemExit("Couldn't decrypt the voice sample. Check the VOICE_KEY secret matches exactly.")
+    return out
+
+
+def _chatterbox(lines):
+    import torch
+    from chatterbox.tts import ChatterboxTTS
+    cfg = _cfg()["chatterbox"]
+    torch.set_num_threads(os.cpu_count() or 4)
+    model = ChatterboxTTS.from_pretrained(device="cpu")
+    if os.environ.get("CHATTERBOX_BUILTIN"):
+        print("chatterbox: using the model's built-in voice (test mode)")
+    else:
+        model.prepare_conditionals(_reference_wav(), exaggeration=cfg["exaggeration"])
+    out = []
+    for i, line in enumerate(lines):
+        torch.manual_seed(cfg.get("seed", 7) + i)
+        wav = model.generate(line, exaggeration=cfg["exaggeration"], cfg_weight=cfg["cfg_weight"],
+                             temperature=cfg["temperature"])
+        a = wav.squeeze(0).detach().cpu().numpy().astype(np.float32)
+        if model.sr != SR:   # resample via ffmpeg to the engine's rate
+            raw = subprocess.run(["ffmpeg", "-loglevel", "error", "-f", "f32le", "-ar", str(model.sr), "-ac", "1", "-i", "pipe:0",
+                                  "-f", "f32le", "-ar", str(SR), "-ac", "1", "pipe:1"], input=a.tobytes(), capture_output=True, check=True).stdout
+            a = np.frombuffer(raw, dtype=np.float32).copy()
+        print(f"  line {i + 1}/{len(lines)} done")
+        out.append(a)
+    return out
 
 
 def synth(lines):
-    return _elevenlabs(lines) if engine_name() == "elevenlabs" else _kokoro(lines)
+    return {"elevenlabs": _elevenlabs, "chatterbox": _chatterbox}.get(engine_name(), _kokoro)(lines)
 
 
 def _trim(a, thresh=0.01):

@@ -1,7 +1,7 @@
 {
   "engine": "kokoro",
   "kokoro_voice": "am_michael",
-  "_note": "engine: 'kokoro' (free, runs on GitHub) or 'elevenlabs' (needs ELEVENLABS_API_KEY secret + paid plan for Baxter). ElevenLabs voices are tried in order.",
+  "_note": "engine: 'kokoro' (free, generic), 'chatterbox' (clone of Mathew's voice from the encrypted voice/ref.wav.enc, needs VOICE_KEY secret) or 'elevenlabs'.",
   "elevenlabs_voices": [
     {
       "name": "Baxter",
@@ -12,5 +12,12 @@
       "id": "IKne3meq5aSn9XLyUdCD"
     }
   ],
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "chatterbox": {
+    "reference": "voice/ref.wav.enc",
+    "exaggeration": 0.45,
+    "cfg_weight": 0.5,
+    "temperature": 0.7,
+    "seed": 7
+  }
 }

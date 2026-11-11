@@ -41,22 +41,22 @@ jobs:
 
       - name: Install
         if: steps.pick.outputs.slug != ''
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg libcairo2-dev pkg-config fonts-dejavu-core
-          pip install -q -r requirements.txt
+        run: bash tools/install.sh
 
       - uses: actions/cache@v4
         if: steps.pick.outputs.slug != ''
         with:
-          path: ~/.cache/kokoro
-          key: kokoro-v1.0
+          path: |
+            ~/.cache/kokoro
+            ~/.cache/huggingface
+          key: voices-kokoro-v1.0-chatterbox-0.1.7
 
       - name: Build video
         if: steps.pick.outputs.slug != ''
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+          VOICE_KEY: ${{ secrets.VOICE_KEY }}
         run: |
           python -m engine.build "videos/${{ steps.pick.outputs.slug }}" --out build
           mkdir -p site
