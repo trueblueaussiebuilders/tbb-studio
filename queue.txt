@@ -1,0 +1,3 @@
+# Posting order. Each Tue/Fri run posts the first entry not yet in posted.txt.
+# Add slugs (folder names under videos/) to the bottom. Merging a PR that adds them = approval.
+001-waffle-pod-slab

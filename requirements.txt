@@ -1,0 +1,4 @@
+pycairo>=1.26
+numpy>=1.26
+soundfile>=0.12
+kokoro-onnx>=0.4   # free fallback voice when no ElevenLabs key is set

@@ -1,0 +1,135 @@
+name: Post next video
+
+on:
+  schedule:
+    # 08:30 UTC Tue + Fri = 7:30pm Melbourne in daylight saving (6:30pm in winter). GitHub may run it a bit late.
+    - cron: "30 8 * * 2,5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and host the video but don't post to Instagram"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: post
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      slug: ${{ steps.pick.outputs.slug }}
+      file: ${{ steps.pick.outputs.file }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: pick
+        name: Pick next video from queue
+        run: |
+          slug="$(python3 tools/next.py)"
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+          echo "file=${slug}-${{ github.run_id }}.mp4" >> "$GITHUB_OUTPUT"
+          if [ -z "$slug" ]; then echo "::warning::Queue is empty. Nothing to post. Merge the next batch PR."; fi
+
+      - name: Install
+        if: steps.pick.outputs.slug != ''
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg libcairo2-dev pkg-config fonts-dejavu-core
+          pip install -q -r requirements.txt
+
+      - uses: actions/cache@v4
+        if: steps.pick.outputs.slug != ''
+        with:
+          path: ~/.cache/kokoro
+          key: kokoro-v1.0
+
+      - name: Build video
+        if: steps.pick.outputs.slug != ''
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+        run: |
+          python -m engine.build "videos/${{ steps.pick.outputs.slug }}" --out build
+          mkdir -p site
+          cp "build/${{ steps.pick.outputs.slug }}.mp4" "site/${{ steps.pick.outputs.file }}"
+          echo "True Blue Builds" > site/index.html
+
+      - uses: actions/upload-artifact@v4
+        if: steps.pick.outputs.slug != ''
+        with:
+          name: post-${{ steps.pick.outputs.slug }}
+          path: build/
+          retention-days: 60
+
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.pick.outputs.slug != ''
+        with:
+          path: site
+
+  host:
+    # Instagram fetches the video from a public URL, so it's hosted briefly on GitHub Pages
+    needs: build
+    if: needs.build.outputs.slug != ''
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  publish:
+    needs: [build, host]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: post-${{ needs.build.outputs.slug }}
+          path: build
+
+      - name: Wait for video URL
+        id: url
+        run: |
+          url="${{ needs.host.outputs.page_url }}${{ needs.build.outputs.file }}"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          for i in $(seq 1 30); do
+            if curl -sfI "$url" | grep -qi "content-type: video/mp4"; then echo "live: $url"; exit 0; fi
+            sleep 10
+          done
+          echo "::error::Video never became available at $url"; exit 1
+
+      - name: Post to Instagram
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+        run: |
+          python3 publish/instagram.py post \
+            --video-url "${{ steps.url.outputs.url }}" \
+            --caption-file "build/${{ needs.build.outputs.slug }}.caption.txt" \
+            --id-file media_id.txt
+
+      - name: Log as posted
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          echo "${{ needs.build.outputs.slug }}  $(date -u +%F)  $(cat media_id.txt)" >> posted.txt
+          git config user.name "tbb-bot"
+          git config user.email "tbb-bot@users.noreply.github.com"
+          git add posted.txt
+          git commit -m "Posted ${{ needs.build.outputs.slug }}"
+          git push
+
+      - name: Dry run summary
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: echo "Dry run OK. Video hosted at ${{ steps.url.outputs.url }} (not posted)." >> "$GITHUB_STEP_SUMMARY"

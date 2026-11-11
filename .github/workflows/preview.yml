@@ -1,0 +1,54 @@
+name: Preview videos in PR
+
+on:
+  pull_request:
+    paths: ["videos/**"]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg libcairo2-dev pkg-config fonts-dejavu-core
+          pip install -q -r requirements.txt
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/kokoro
+          key: kokoro-v1.0
+
+      - name: Render changed videos
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+        run: |
+          git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- videos \
+            | cut -d/ -f2 | sort -u > changed.txt
+          cat changed.txt
+          while read -r slug; do
+            [ -f "videos/$slug/spec.py" ] && python -m engine.build "videos/$slug" --out previews
+          done < changed.txt
+
+      - uses: actions/upload-artifact@v4
+        id: up
+        with:
+          name: previews
+          path: previews/
+          retention-days: 30
+
+      - name: Comment with download link
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body \
+            "Previews rendered with the production voice: [download previews.zip](${{ steps.up.outputs.artifact-url }}). Merge this PR to approve them for posting."
