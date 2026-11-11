@@ -14,12 +14,13 @@
   ],
   "model": "eleven_multilingual_v2",
   "chatterbox": {
-    "reference": "voice/ref.wav.enc",
+    "reference": "voice/ref_female.wav.enc",
     "exaggeration": 0.7,
     "cfg_weight": 0.3,
     "temperature": 0.8,
     "seed": 7,
     "tempo": 0.95,
-    "line_gap": 0.45
+    "line_gap": 0.45,
+    "_reference_note": "ref_female = Mathew's sample converted to female (pitch x1.71, formants x1.17). ref = his original voice."
   }
 }
