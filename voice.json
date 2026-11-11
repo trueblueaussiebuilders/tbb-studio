@@ -1,8 +1,16 @@
 {
-  "_note": "ElevenLabs voices tried in order. Baxter = calm Australian male (Voice Library, needs a paid plan for API use). Charlie = older default Australian male (only on accounts made before Mar 2026, retired 31 Dec 2026). Override with the ELEVENLABS_VOICE_ID secret if you want a different voice.",
+  "engine": "kokoro",
+  "kokoro_voice": "am_michael",
+  "_note": "engine: 'kokoro' (free, runs on GitHub) or 'elevenlabs' (needs ELEVENLABS_API_KEY secret + paid plan for Baxter). ElevenLabs voices are tried in order.",
   "elevenlabs_voices": [
-    {"name": "Baxter", "id": "jSuBIjxMKhqIfb0wCK1F"},
-    {"name": "Charlie", "id": "IKne3meq5aSn9XLyUdCD"}
+    {
+      "name": "Baxter",
+      "id": "jSuBIjxMKhqIfb0wCK1F"
+    },
+    {
+      "name": "Charlie",
+      "id": "IKne3meq5aSn9XLyUdCD"
+    }
   ],
   "model": "eleven_multilingual_v2"
 }

@@ -73,12 +73,19 @@ def _kokoro(lines):
         if not os.path.exists(p):
             print("downloading", f); urllib.request.urlretrieve(KOKORO_URL + f, p)
     k = Kokoro(os.path.join(KOKORO_DIR, "kokoro-v1.0.onnx"), os.path.join(KOKORO_DIR, "voices-v1.0.bin"))
-    voice = os.environ.get("KOKORO_VOICE", "am_michael")
+    voice = os.environ.get("KOKORO_VOICE") or _cfg().get("kokoro_voice", "am_michael")
     return [k.create(line, voice=voice, speed=1.05, lang="en-us")[0].astype(np.float32) for line in lines]
 
 
+def _cfg():
+    return json.load(open(os.path.join(ROOT, "voice.json")))
+
+
 def engine_name():
-    return "elevenlabs" if os.environ.get("ELEVENLABS_API_KEY", "").strip() else "kokoro"
+    """voice.json decides. ElevenLabs is only used when chosen there and a key is set."""
+    if _cfg().get("engine") == "elevenlabs" and os.environ.get("ELEVENLABS_API_KEY", "").strip():
+        return "elevenlabs"
+    return "kokoro"
 
 
 def synth(lines):
