@@ -142,14 +142,24 @@ def _trim(a, thresh=0.01):
 LEAD = 0.15   # voice starts this long after each scene starts
 
 
+def _tempo(a, factor):
+    if abs(factor - 1.0) < 1e-3: return a
+    raw = subprocess.run(["ffmpeg", "-loglevel", "error", "-f", "f32le", "-ar", str(SR), "-ac", "1", "-i", "pipe:0",
+                          "-af", f"atempo={factor}", "-f", "f32le", "-ar", str(SR), "-ac", "1", "pipe:1"],
+                         input=a.astype(np.float32).tobytes(), capture_output=True, check=True).stdout
+    return np.frombuffer(raw, dtype=np.float32).copy()
+
+
 def narrate(narration):
     """Returns (timings dict, narration track as float32 array)."""
     keys = ["hook"] + [f"step{i}" for i in range(len(narration["steps"]))] + ["result", "end"]
     lines = [narration["hook"]] + narration["steps"] + [narration["result"], narration["end"]]
-    clips = dict(zip(keys, [_trim(a) for a in synth(lines)]))
+    ecfg = _cfg().get(engine_name(), {}) if isinstance(_cfg().get(engine_name()), dict) else {}
+    tempo, gap = ecfg.get("tempo", 1.0), ecfg.get("line_gap", 0.3)
+    clips = dict(zip(keys, [_tempo(_trim(a), tempo) for a in synth(lines)]))
     L = lambda a: len(a) / SR
-    tim = {"hook": round(max(2.8, LEAD + L(clips["hook"]) + 0.3), 2),
-           "steps": [round(max(3.0, LEAD + L(clips[f"step{i}"]) + 0.3), 2) for i in range(len(narration["steps"]))],
+    tim = {"hook": round(max(2.8, LEAD + L(clips["hook"]) + gap), 2),
+           "steps": [round(max(3.0, LEAD + L(clips[f"step{i}"]) + gap), 2) for i in range(len(narration["steps"]))],
            "result": round(max(3.2, LEAD + L(clips["result"]) + 0.9), 2),
            "end": round(max(2.8, LEAD + L(clips["end"]) + 0.8), 2)}
     durs = [tim["hook"]] + tim["steps"] + [tim["result"], tim["end"]]
