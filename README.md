@@ -1,6 +1,6 @@
-# True Blue Builds studio
+# True Blue Aussie Builders studio
 
-Automated blueprint-style construction Reels for [@truebluebuilds](https://instagram.com/truebluebuilds).
+Automated blueprint-style construction Reels for [@trueblueaussiebuilders](https://instagram.com/trueblueaussiebuilders).
 
 ## How it runs
 

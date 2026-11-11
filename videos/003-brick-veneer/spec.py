@@ -45,7 +45,7 @@ CAPTION = """That brick house? It's held up by timber 👇 How a brick veneer wa
 Typical: 90 timber studs, a 40 to 60 cavity, 110 brick skin tied back to the frame. The brick carries its own weight, the frame carries the roof.
 Typical only. Your engineer's design and the drawings govern.
 
-#construction #brickveneer #bricklaying #housebuild #australianbuilding #carpentry #building #truebluebuilds"""
+#construction #brickveneer #bricklaying #housebuild #australianbuilding #carpentry #building #trueblueaussiebuilders"""
 
 # ---------------------------------------------------------------- geometry (px, NTS)
 BX0, BX1 = 250, 340            # brick skin

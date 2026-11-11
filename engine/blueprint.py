@@ -11,8 +11,8 @@ BG = (0.06, 0.22, 0.42)
 WHITE = (0.93, 0.97, 1.0)
 YEL = (1.0, 0.82, 0.30)
 FONT = "DejaVu Sans Mono"
-HANDLE = "@TRUEBLUEBUILDS"
-SERIES = "TRUE BLUE BUILDS"
+HANDLE = "@TRUEBLUEAUSSIEBUILDERS"
+SERIES = "TRUE BLUE AUSSIE BUILDERS"
 
 # Layout bands (keep key info out of the bottom ~20% and the right edge: Reels UI)
 DRAW_TOP, DRAW_BOTTOM = 400, 1210   # section drawing area
