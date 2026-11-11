@@ -7,9 +7,12 @@ import math, os, random
 import cairo
 
 W, H, FPS = 1080, 1920, 30
-BG = (0.06, 0.22, 0.42)
-WHITE = (0.93, 0.97, 1.0)
-YEL = (1.0, 0.82, 0.30)
+# Dark-mode theme: white linework on near-black, electric blue brand accents, orange for "what's happening now"
+BG = (0.035, 0.04, 0.05)
+WHITE = (0.95, 0.96, 0.98)
+BLUE = (0.25, 0.58, 1.0)
+ORANGE = (1.0, 0.55, 0.12)
+YEL = ORANGE                      # legacy name: active-step highlight
 FONT = "DejaVu Sans Mono"
 HANDLE = "@TRUEBLUEAUSSIEBUILDERS"
 SERIES = "TRUE BLUE AUSSIE BUILDERS"
@@ -125,7 +128,7 @@ def leader(ctx, p, col, tip, elbow, label, size=24, anchor="l"):
     text(ctx, label, elbow[0] + dx, elbow[1] + 8, size, col, bold=True, anchor=anchor, chars=n)
 
 
-def dim_v(ctx, x, y1, y2, label, p, col=YEL):
+def dim_v(ctx, x, y1, y2, label, p, col=BLUE):
     polyline(ctx, [(x, y1), (x, y2)], p, col, 2)
     for y in (y1, y2):
         polyline(ctx, [(x - 14, y), (x + 14, y)], p, col, 2)
@@ -134,7 +137,7 @@ def dim_v(ctx, x, y1, y2, label, p, col=YEL):
     text(ctx, label, 0, 0, 24, col, alpha=clamp(p * 2 - 1), bold=True, anchor="c"); ctx.restore()
 
 
-def dim_h(ctx, y, x1, x2, label, p, col=YEL):
+def dim_h(ctx, y, x1, x2, label, p, col=BLUE):
     polyline(ctx, [(x1, y), (x2, y)], p, col, 2)
     for x in (x1, x2):
         polyline(ctx, [(x, y - 14), (x, y + 14)], p, col, 2)
@@ -200,15 +203,15 @@ def background():
     if _BG is not None: return _BG
     s = cairo.ImageSurface(cairo.FORMAT_RGB24, W, H); c = cairo.Context(s)
     c.set_source_rgb(*BG); c.paint()
-    g = cairo.RadialGradient(W / 2, H / 2, 300, W / 2, H / 2, 1250)
-    g.add_color_stop_rgba(0, 0, 0, 0, 0); g.add_color_stop_rgba(1, 0, 0, 0, 0.35)
+    g = cairo.RadialGradient(W / 2, H * 0.42, 100, W / 2, H * 0.42, 1100)
+    g.add_color_stop_rgba(0, *BLUE, 0.10); g.add_color_stop_rgba(1, *BLUE, 0.0)
     c.set_source(g); c.paint()
     for i in range(0, max(W, H), 30):
         major = i % 150 == 0
-        c.set_source_rgba(1, 1, 1, 0.11 if major else 0.045); c.set_line_width(1.5 if major else 1)
+        c.set_source_rgba(*BLUE, 0.13 if major else 0.055); c.set_line_width(1.5 if major else 1)
         if i <= W: c.move_to(i + .5, 0); c.line_to(i + .5, H); c.stroke()
         c.move_to(0, i + .5); c.line_to(W, i + .5); c.stroke()
-    c.set_source_rgba(*WHITE, 0.55); c.set_line_width(3); c.rectangle(40, 60, W - 80, H - 120); c.stroke()
+    c.set_source_rgba(*WHITE, 0.35); c.set_line_width(3); c.rectangle(40, 60, W - 80, H - 120); c.stroke()
     c.set_line_width(1.5); c.rectangle(52, 72, W - 104, H - 144); c.stroke()
     _BG = s
     return s
@@ -222,7 +225,7 @@ def draw_frame(spec, tl, t):
 
     # header
     series = M.get("series", SERIES)
-    text(ctx, series, 90, 150, 30, YEL, bold=True, spacing=6, chars=int(len(series) * clamp(t / 1.0)))
+    text(ctx, series, 90, 150, 30, BLUE, bold=True, spacing=6, chars=int(len(series) * clamp(t / 1.0)))
     text(ctx, M["title"], 88, 235, 76 if len(M["title"]) <= 19 else 60, WHITE, bold=True,
          chars=int(len(M["title"]) * clamp((t - 0.3) / 1.0)))
     text(ctx, M["subtitle"], 90, 285, 26, WHITE, alpha=0.75 * clamp((t - 0.9) / 0.5))
@@ -233,9 +236,10 @@ def draw_frame(spec, tl, t):
         a = clamp(t / 0.3) * (1 - clamp((t - tl.hook + 0.2) / 0.5))
         for i, line in enumerate(M["hook"]):
             k = clamp((t - 0.4 - i * 0.35) / 0.35)
-            text(ctx, line, W / 2, 760 + i * 95 + (1 - ease(k)) * 30, 64, WHITE, alpha=a * k, bold=True, anchor="c")
+            col = ORANGE if i == len(M["hook"]) - 1 else WHITE
+            text(ctx, line, W / 2, 760 + i * 95 + (1 - ease(k)) * 30, 64, col, alpha=a * k, bold=True, anchor="c")
         k = clamp((t - 1.6) / 0.4)
-        text(ctx, M["hook_sub"], W / 2, 760 + len(M["hook"]) * 95 + 55, 32, YEL, alpha=a * k, bold=True, anchor="c", spacing=2)
+        text(ctx, M["hook_sub"], W / 2, 760 + len(M["hook"]) * 95 + 55, 32, BLUE, alpha=a * k, bold=True, anchor="c", spacing=2)
 
     # section label + the video's own drawing
     text(ctx, M.get("section_label", "SECTION A-A  (NTS)"), 90, 385, 24, WHITE,
@@ -276,21 +280,21 @@ def draw_frame(spec, tl, t):
         ctx.move_to(x, tb); ctx.line_to(x, tb + 110); ctx.stroke()
     for (x, lab, val) in ((100, SERIES, M.get("drawing", M["title"])[:22]), (530, "SCALE", "NTS"),
                           (710, "DWG", M.get("dwg", "001")), (860, "REV", "A")):
-        text(ctx, lab, x, tb + 32, 18, WHITE, alpha=0.55, bold=True, spacing=2)
+        text(ctx, lab, x, tb + 32, 18, BLUE, alpha=0.8, bold=True, spacing=2)
         text(ctx, val, x, tb + 78, 28, WHITE, alpha=0.8, bold=True)
 
-    # end card
+    # end card: follow + witty sign-off
     if t >= tl.end0:
         k = clamp((t - tl.end0) / 0.4)
-        ctx.set_source_rgba(*BG, 0.88 * k); ctx.paint()
+        ctx.set_source_rgba(*BG, 0.92 * k); ctx.paint()
+        text(ctx, "FOLLOW FOR MORE", W / 2, 840, 64, WHITE, alpha=k, bold=True, anchor="c")
+        k2 = clamp((t - tl.end0 - 0.5) / 0.4)
+        polyline(ctx, [(W / 2 - 300, 900), (W / 2 + 300, 900)], k2, ORANGE, 3)
+        signoff = M.get("signoff", "").upper()
+        for i, ln in enumerate(wrap(ctx, signoff, 38, 860, bold=True)):
+            text(ctx, ln, W / 2, 965 + i * 52, 38, ORANGE, alpha=k2, bold=True, anchor="c")
         k3 = clamp((t - tl.end0 - 1.0) / 0.4)
-        text(ctx, HANDLE, W / 2, 760, 34, WHITE, alpha=0.8 * k3, bold=True, anchor="c", spacing=3)
-        text(ctx, "FOLLOW FOR MORE BUILDS", W / 2, 860, 50, WHITE, alpha=k, bold=True, anchor="c")
-        text(ctx, "HOUSES  //  SCHOOLS  //  BRIDGES", W / 2, 930, 28, WHITE, alpha=0.75 * k, bold=True, anchor="c", spacing=2)
-        k2 = clamp((t - tl.end0 - 0.6) / 0.4)
-        polyline(ctx, [(W / 2 - 300, 1000), (W / 2 + 300, 1000)], k2, YEL, 2)
-        if M.get("next"):
-            text(ctx, M["next"], W / 2, 1065, 32, YEL, alpha=k2, bold=True, anchor="c")
+        text(ctx, HANDLE, W / 2, 1130, 30, BLUE, alpha=k3, bold=True, anchor="c", spacing=3)
     return s
 
 
@@ -301,18 +305,19 @@ def draw_cover(spec, tl):
     M = spec.META
     s = cairo.ImageSurface(cairo.FORMAT_RGB24, W, H); ctx = cairo.Context(s)
     ctx.set_source_surface(background()); ctx.paint()
-    text(ctx, M.get("series", SERIES), W / 2, 300, 30, YEL, bold=True, anchor="c", spacing=6)
+    text(ctx, M.get("series", SERIES), W / 2, 300, 30, BLUE, bold=True, anchor="c", spacing=6)
     lines = M.get("cover", M["hook"][:2])
     size = 92 if max(len(l) for l in lines) <= 16 else 74
     for i, line in enumerate(lines):
-        text(ctx, line, W / 2, 400 + i * (size + 18), size, WHITE, bold=True, anchor="c")
+        text(ctx, line, W / 2, 400 + i * (size + 18), size, ORANGE if i == len(lines) - 1 else WHITE, bold=True, anchor="c")
     # finished drawing, scaled into the middle band
     ctx.save(); ctx.translate(81, 330 + (len(lines) - 2) * 60); ctx.scale(0.85, 0.85)
     spec.draw_section(ctx, tl.end0 - 0.05, tl)
     ctx.restore()
     # title strip
     y = 1420
-    ctx.set_source_rgba(*YEL, 1); ctx.rectangle(90, y, 900, 120); ctx.fill()
+    ctx.set_source_rgba(*ORANGE, 1); ctx.rectangle(90, y, 900, 120); ctx.fill()
     text(ctx, M["title"], W / 2, y + 62, 56 if len(M["title"]) <= 22 else 46, BG, bold=True, anchor="c")
     text(ctx, "HOW IT'S BUILT  //  STEP BY STEP", W / 2, y + 100, 24, BG, bold=True, anchor="c", spacing=2)
+    text(ctx, HANDLE, W / 2, y + 175, 26, BLUE, bold=True, anchor="c", spacing=3)
     return s

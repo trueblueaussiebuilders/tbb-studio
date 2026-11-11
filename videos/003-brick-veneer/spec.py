@@ -21,7 +21,7 @@ META = {
         ("SHRINKAGE GAP", "Gap left under the eaves and window sills so the timber can shrink without cracking the bricks."),
     ],
     "result": "The frame holds the house up. The bricks are the raincoat.",
-    "next": "NEXT: HOW A TIMBER WALL FRAME GOES UP",
+    "signoff": "Don't judge a house by its bricks.",
 }
 
 NARRATION = {
@@ -37,7 +37,7 @@ NARRATION = {
         "And a gap's left under the eaves, so the frame can shrink without cracking the bricks.",
     ],
     "result": "The frame holds the house up. The bricks are basically a tough raincoat.",
-    "end": "Follow for more. Next up, timber wall frames.",
+    "end": "Follow for more. And don't judge a house by its bricks.",
 }
 
 CAPTION = """That brick house? It's held up by timber 👇 How a brick veneer wall goes together.

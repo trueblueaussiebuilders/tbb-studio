@@ -21,7 +21,7 @@ META = {
         ("GROUT & CONNECT", "Base grouted and the panel tied into the roof steel. Braces come out once the structure's up."),
     ],
     "result": "Big concrete walls, cast right there on site and stood up in a day.",
-    "next": "NEXT: HOW BRICK VENEER GOES TOGETHER",
+    "signoff": "Hold my level.",
 }
 
 NARRATION = {
@@ -37,7 +37,7 @@ NARRATION = {
         "Base gets grouted, and it's tied into the roof steel. Braces come out once the structure's up.",
     ],
     "result": "Big concrete walls, cast right there on site, and stood up in a day.",
-    "end": "Follow for more. Next up, brick veneer.",
+    "end": "Follow for more. Hold my level.",
 }
 
 CAPTION = """These walls are poured lying down 👇 How a tilt-up concrete panel goes up, step by step.

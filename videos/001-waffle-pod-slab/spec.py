@@ -20,7 +20,7 @@ META = {
         ("POUR & FINISH", "Concrete placed, vibrated, screeded, finished and cured."),
     ],
     "result": "A stiff ribbed raft that uses less concrete and digging than a conventional slab.",
-    "next": "NEXT: HOW A TILT-UP PANEL GOES UP",
+    "signoff": "Solid foundations. Solid follow.",
 }
 
 NARRATION = {
@@ -36,7 +36,7 @@ NARRATION = {
         "Then it's poured, vibrated, screeded and finished.",
     ],
     "result": "The result is a stiff, ribbed raft, with less concrete and less digging than a conventional slab.",
-    "end": "Follow for more. Next up, tilt-up panels.",
+    "end": "Follow for more. Solid foundations, solid follow.",
 }
 
 CAPTION = """There's polystyrene under a lot of new Aussie houses. This is how a waffle pod slab goes in 👇
