@@ -174,3 +174,47 @@ def draw_section(ctx, t, tl):
     r0 = tl.res0
     dim_h(ctx, 940, STUDS[0] + SW / 2, STUDS[1] + SW / 2, "600", prog(t, r0, 0.6))
     dim_v(ctx, 82, TOP0, BOT1, "2400 TYP", prog(t, r0 + 0.3, 0.6))
+
+
+# ---------------------------------------------------------------- 3D model (mm): front wall + return wall + gable truss
+def model3d():
+    from engine.three_d import box, member
+    P = []; o = 0
+    P.append(box(-600, 6000, -150, 0, -3200, 700, o, "concrete")); o += 1
+    # front wall (z 0..90)
+    P.append(box(0, 5400, 0, 45, 0, 90, o)); o += 1
+    studs = [600 * i for i in range(10)] + [5355]
+    for x in studs:
+        if 2400 < x < 4200: continue                      # opening: handled below
+        P.append(box(x, x + 45, 45, 2355, 0, 90, o)); o += 1
+    P.append(box(2445, 2490, 45, 2100, 0, 90, o)); P.append(box(4155, 4200, 45, 2100, 0, 90, o)); o += 1   # jambs
+    P.append(box(2400, 4245, 2100, 2300, 0, 90, o)); o += 1                                                # lintel
+    for x in (3000, 3600):
+        P.append(box(x, x + 45, 2300, 2355, 0, 90, o)); P.append(box(x, x + 45, 45, 900, 0, 90, o))        # cripples + jacks
+    P.append(box(2490, 4155, 900, 945, 0, 90, o)); o += 1                                                  # sill trimmer
+    for i, x in enumerate(studs[:-1]):
+        nxt = studs[i + 1]
+        if 2400 <= x < 4200 or nxt - x < 100: continue
+        y = 1150 + (60 if i % 2 else 0)
+        P.append(box(x + 45, nxt, y, y + 45, 0, 90, o))
+    o += 1
+    P.append(box(0, 5400, 2355, 2400, 0, 90, o)); P.append(box(0, 5400, 2400, 2445, 0, 90, o)); o += 1    # top plates
+    for a, b in [((30, 2400), (2380, 60)), ((2380, 2400), (30, 60)), ((4250, 2400), (5380, 60)), ((5380, 2400), (4250, 60))]:
+        P.append(member(a, b, 30, 90, 93, o, "steel"))
+    o += 1
+    # return wall along -z at x 0..90
+    P.append(box(0, 90, 0, 45, -2700, 0, o)); o += 1
+    for z in range(-2700, 0, 600):
+        P.append(box(0, 90, 45, 2355, z, z + 45, o))
+    o += 1
+    P.append(box(0, 90, 2355, 2445, -2700, 0, o)); o += 1
+    # gable truss on the front wall
+    apex = (2700, 3345)
+    P.append(member((0, 2490), (5400, 2490), 90, 20, 70, o)); o += 1
+    P.append(member((0, 2490), apex, 90, 20, 70, o)); P.append(member(apex, (5400, 2490), 90, 20, 70, o)); o += 1
+    for a, b in [((1350, 2918), (1800, 2490)), ((1800, 2490), apex), (apex, (3600, 2490)), ((3600, 2490), (4050, 2918))]:
+        P.append(member(a, b, 70, 25, 65, o))
+    o += 1
+    cfg = {"target": (2400, 1500, -900), "yaw": -32, "pitch": 16, "dist": 10500, "scale": 1.38,
+           "cy_hook": 1000, "cy_result": 830, "cy_cover": 1010, "cover_scale": 0.95}
+    return P, cfg

@@ -218,8 +218,24 @@ def background():
 
 
 # ---------------------------------------------------------------- full frame
+_MODEL_CACHE = {}
+def _model(spec):
+    if not hasattr(spec, "model3d"): return None
+    if id(spec) not in _MODEL_CACHE: _MODEL_CACHE[id(spec)] = spec.model3d()
+    return _MODEL_CACHE[id(spec)]
+
+
+def _draw3d(ctx, spec, cy, yaw, alpha=1.0, appear=None, pitch=None, scale_mul=1.0):
+    from engine import three_d as td
+    parts, cfg = _model(spec)
+    cam = td.Camera(cfg["target"], yaw, cfg.get("pitch", 18) if pitch is None else pitch, cfg["dist"],
+                    cfg["scale"] * scale_mul, 540, cy)
+    td.render(ctx, parts, cam, alpha=alpha, appear=appear)
+
+
 def draw_frame(spec, tl, t):
     M = spec.META
+    m3 = _model(spec)
     s = cairo.ImageSurface(cairo.FORMAT_RGB24, W, H); ctx = cairo.Context(s)
     ctx.set_source_surface(background()); ctx.paint()
 
@@ -234,17 +250,37 @@ def draw_frame(spec, tl, t):
     # hook
     if t < tl.hook + 0.4:
         a = clamp(t / 0.3) * (1 - clamp((t - tl.hook + 0.2) / 0.5))
+        y0, gap = (470, 82) if m3 else (760, 95)
         for i, line in enumerate(M["hook"]):
             k = clamp((t - 0.4 - i * 0.35) / 0.35)
             col = ORANGE if i == len(M["hook"]) - 1 else WHITE
-            text(ctx, line, W / 2, 760 + i * 95 + (1 - ease(k)) * 30, 64, col, alpha=a * k, bold=True, anchor="c")
+            text(ctx, line, W / 2, y0 + i * gap + (1 - ease(k)) * 30, 64, col, alpha=a * k, bold=True, anchor="c")
         k = clamp((t - 1.6) / 0.4)
-        text(ctx, M["hook_sub"], W / 2, 760 + len(M["hook"]) * 95 + 55, 32, BLUE, alpha=a * k, bold=True, anchor="c", spacing=2)
+        text(ctx, M["hook_sub"], W / 2, y0 + len(M["hook"]) * gap + 40, 32, BLUE, alpha=a * k, bold=True, anchor="c", spacing=2)
+        if m3:
+            parts, cfg = m3
+            n = max(p.order for p in parts) + 1
+            span = max(tl.hook - 1.0, 1.5)
+            appear = lambda part: clamp((t - 0.2 - span * part.order / n) / 0.45)
+            yaw = cfg["yaw"] + 14 * (t / max(tl.hook, 1))
+            _draw3d(ctx, spec, cfg.get("cy_hook", 1010), yaw, alpha=a, appear=appear)
 
     # section label + the video's own drawing
     text(ctx, M.get("section_label", "SECTION A-A  (NTS)"), 90, 385, 24, WHITE,
          alpha=0.7 * clamp((t - tl.s(1)) / 0.4), bold=True, spacing=2)
-    spec.draw_section(ctx, t, tl)
+    k3 = 0.0
+    if m3 and t >= tl.res0:
+        dur = tl.end0 - tl.res0
+        k3 = ease((t - tl.res0 - 0.45 * dur) / 0.7)
+    if k3 < 1:
+        if k3 > 0:
+            ctx.push_group(); spec.draw_section(ctx, t, tl); ctx.pop_group_to_source(); ctx.paint_with_alpha(1 - k3)
+        else:
+            spec.draw_section(ctx, t, tl)
+    if k3 > 0:
+        cfg = m3[1]
+        u = (t - tl.res0) / max(tl.end0 - tl.res0, 1)
+        _draw3d(ctx, spec, cfg.get("cy_result", 820), cfg["yaw"] - 25 + 50 * u, alpha=k3)
 
     # step panel
     def panel(num_txt, title, body, t0, t1, last=False):
@@ -310,10 +346,14 @@ def draw_cover(spec, tl):
     size = 92 if max(len(l) for l in lines) <= 16 else 74
     for i, line in enumerate(lines):
         text(ctx, line, W / 2, 400 + i * (size + 18), size, ORANGE if i == len(lines) - 1 else WHITE, bold=True, anchor="c")
-    # finished drawing, scaled into the middle band
-    ctx.save(); ctx.translate(81, 330 + (len(lines) - 2) * 60); ctx.scale(0.85, 0.85)
-    spec.draw_section(ctx, tl.end0 - 0.05, tl)
-    ctx.restore()
+    # finished drawing (3D hero shot if the video has a model), in the middle band
+    if _model(spec):
+        cfg = _model(spec)[1]
+        _draw3d(ctx, spec, cfg.get("cy_cover", 1000) + (len(lines) - 2) * 40, cfg["yaw"] - 8, scale_mul=cfg.get("cover_scale", 1.0))
+    else:
+        ctx.save(); ctx.translate(81, 330 + (len(lines) - 2) * 60); ctx.scale(0.85, 0.85)
+        spec.draw_section(ctx, tl.end0 - 0.05, tl)
+        ctx.restore()
     # title strip
     y = 1420
     ctx.set_source_rgba(*ORANGE, 1); ctx.rectangle(90, y, 900, 120); ctx.fill()
