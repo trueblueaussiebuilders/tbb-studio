@@ -21,7 +21,6 @@ META = {
         ("ROOF TRUSSES", "Trusses lifted on, sitting on the top plate and tied down."),
     ],
     "result": "Light, strong and quick to build. That's why most Aussie houses are framed in timber.",
-    "signoff": "Measure twice, follow once.",
 }
 
 NARRATION = {
@@ -37,7 +36,7 @@ NARRATION = {
         "And the roof trusses sit right on top.",
     ],
     "result": "Light, strong, and quick to build. That's why most Australian houses are framed in timber.",
-    "end": "Follow for more. Measure twice, follow once.",
+    "end": "Follow for more.",
 }
 
 CAPTION = """Ever wondered what's behind the plasterboard? 👇 How a timber wall frame goes up, step by step.

@@ -326,7 +326,7 @@ def draw_frame(spec, tl, t):
         text(ctx, "FOLLOW FOR MORE", W / 2, 840, 64, WHITE, alpha=k, bold=True, anchor="c")
         k2 = clamp((t - tl.end0 - 0.5) / 0.4)
         polyline(ctx, [(W / 2 - 300, 900), (W / 2 + 300, 900)], k2, ORANGE, 3)
-        signoff = M.get("signoff", "").upper()
+        signoff = M.get("signoff", "").upper()          # optional; new videos end on "Follow for more" only
         for i, ln in enumerate(wrap(ctx, signoff, 38, 860, bold=True)):
             text(ctx, ln, W / 2, 965 + i * 52, 38, ORANGE, alpha=k2, bold=True, anchor="c")
         k3 = clamp((t - tl.end0 - 1.0) / 0.4)
