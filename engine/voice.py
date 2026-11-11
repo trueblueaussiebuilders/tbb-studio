@@ -1,5 +1,5 @@
 """Voiceover: ElevenLabs when ELEVENLABS_API_KEY + ELEVENLABS_VOICE_ID are set, otherwise Kokoro (free, local)."""
-import json, os, subprocess, urllib.request
+import json, os, subprocess, urllib.request, urllib.error
 import numpy as np
 
 SR = 24000
@@ -15,7 +15,10 @@ def _decode(data: bytes) -> np.ndarray:
 
 
 def _elevenlabs(lines):
-    key, voice = os.environ["ELEVENLABS_API_KEY"], os.environ["ELEVENLABS_VOICE_ID"]
+    key, voice = os.environ["ELEVENLABS_API_KEY"].strip(), os.environ["ELEVENLABS_VOICE_ID"].strip()
+    if " " in key or " " in voice or len(voice) < 15:
+        raise SystemExit(f"ElevenLabs secrets don't look right (key length {len(key)}, voice ID length {len(voice)}, "
+                         "spaces present: {}). Paste the real API key and voice ID into the repo secrets.".format(" " in key + voice))
     model = os.environ.get("ELEVENLABS_MODEL", "eleven_multilingual_v2")
     out, prev = [], None
     for i, line in enumerate(lines):
@@ -28,8 +31,11 @@ def _elevenlabs(lines):
             f"https://api.elevenlabs.io/v1/text-to-speech/{voice}?output_format=mp3_44100_128",
             data=json.dumps(body).encode(), method="POST",
             headers={"xi-api-key": key, "Content-Type": "application/json", "Accept": "audio/mpeg"})
-        with urllib.request.urlopen(req, timeout=120) as r:
-            out.append(_decode(r.read()))
+        try:
+            with urllib.request.urlopen(req, timeout=120) as r:
+                out.append(_decode(r.read()))
+        except urllib.error.HTTPError as e:
+            raise SystemExit(f"ElevenLabs error {e.code}: {e.read().decode(errors='replace')[:300]}")
         prev = line
     return out
 
