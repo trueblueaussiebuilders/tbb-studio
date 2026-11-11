@@ -3,6 +3,7 @@ import math
 from engine.blueprint import *
 
 META = {
+    "category": "residential",
     "title": "WAFFLE POD SLAB",
     "subtitle": "RESIDENTIAL  //  TYPICAL AU DETAIL",
     "dwg": "001",

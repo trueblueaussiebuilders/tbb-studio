@@ -3,6 +3,7 @@ import math
 from engine.blueprint import *
 
 META = {
+    "category": "commercial",
     "title": "TILT-UP PANEL",
     "subtitle": "COMMERCIAL  //  TYPICAL AU METHOD",
     "dwg": "002",

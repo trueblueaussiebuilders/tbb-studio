@@ -1,5 +1,5 @@
 """Voiceover: ElevenLabs when ELEVENLABS_API_KEY + ELEVENLABS_VOICE_ID are set, otherwise Kokoro (free, local)."""
-import json, os, subprocess, urllib.request, urllib.error
+import json, os, re, subprocess, urllib.request, urllib.error
 import numpy as np
 
 SR = 24000
@@ -158,7 +158,19 @@ def narrate(narration):
     lines = [narration["hook"]] + narration["steps"] + [narration["result"], narration["end"]]
     ecfg = _cfg().get(engine_name(), {}) if isinstance(_cfg().get(engine_name()), dict) else {}
     tempo, gap = ecfg.get("tempo", 1.0), ecfg.get("line_gap", 0.3)
-    clips = dict(zip(keys, [_tempo(_trim(a), tempo) for a in synth(lines)]))
+    # Speak each sentence separately and leave a breath between them, so lines don't run together
+    sgap = np.zeros(int(_cfg().get("sentence_gap", 0.4) * SR), dtype=np.float32)
+    split = [[x for x in re.split(r"(?<=[.!?])\s+", line.strip()) if x] for line in lines]
+    flat = [x for parts in split for x in parts]
+    audio = iter(_trim(a) for a in synth(flat))
+    joined = []
+    for parts in split:
+        chunks = []
+        for i, _ in enumerate(parts):
+            if i: chunks.append(sgap)
+            chunks.append(next(audio))
+        joined.append(np.concatenate(chunks))
+    clips = dict(zip(keys, [_tempo(a, tempo) for a in joined]))
     L = lambda a: len(a) / SR
     tim = {"hook": round(max(2.8, LEAD + L(clips["hook"]) + gap), 2),
            "steps": [round(max(3.0, LEAD + L(clips[f"step{i}"]) + gap), 2) for i in range(len(narration["steps"]))],

@@ -2,8 +2,8 @@ name: Post next video
 
 on:
   schedule:
-    # 08:30 UTC Tue + Fri = 7:30pm Melbourne in daylight saving (6:30pm in winter). GitHub may run it a bit late.
-    - cron: "30 8 * * 2,5"
+    # Daily at 08:30 UTC = 7:30pm Melbourne/Sydney in daylight saving (6:30pm in winter), 4:30pm Perth. GitHub may run it a bit late.
+    - cron: "30 8 * * *"
   workflow_dispatch:
     inputs:
       dry_run:

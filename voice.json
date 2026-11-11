@@ -23,5 +23,9 @@
     "line_gap": 0.45,
     "_reference_note": "ref_female = Mathew's sample converted to female (pitch x1.71, formants x1.17). ref = his original voice."
   },
-  "kokoro_speed": 1.0
+  "kokoro_speed": 0.95,
+  "sentence_gap": 0.4,
+  "kokoro": {
+    "line_gap": 0.5
+  }
 }
