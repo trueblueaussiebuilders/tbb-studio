@@ -28,5 +28,6 @@ jobs:
             exit 0
           fi
           python3 publish/instagram.py refresh --out /tmp/tok
+          [ -s /tmp/tok ] || exit 0
           gh secret set IG_ACCESS_TOKEN --repo "${{ github.repository }}" < /tmp/tok
           rm -f /tmp/tok

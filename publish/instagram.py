@@ -8,7 +8,10 @@ Env: IG_ACCESS_TOKEN, IG_USER_ID
 """
 import argparse, json, os, sys, time, urllib.parse, urllib.request, urllib.error
 
-HOST = os.environ.get("IG_HOST", "https://graph.instagram.com")
+def host():
+    """Instagram-login tokens (IG...) use graph.instagram.com; Facebook/unified-login tokens (EA...) use graph.facebook.com."""
+    if os.environ.get("IG_HOST"): return os.environ["IG_HOST"]
+    return "https://graph.facebook.com" if token().startswith("EA") else "https://graph.instagram.com"
 VER = os.environ.get("IG_GRAPH_VERSION", "v26.0")
 
 
@@ -19,14 +22,14 @@ def token():
 
 def diagnose():
     t = token(); uid = os.environ.get("IG_USER_ID", "").strip()
-    kind = {"IG": "Instagram token (correct type)", "EA": "Facebook token (wrong type for this setup)"}.get(t[:2], "unrecognised")
+    kind = {"IG": "Instagram-login token", "EA": "Facebook/unified-login token"}.get(t[:2], "unrecognised")
     print(f"token: starts '{t[:2]}', length {len(t)}, looks like {kind}; contains spaces: {' ' in t}")
     print(f"user id: length {len(uid)}, all digits: {uid.isdigit()}")
 
 
 def call(method, path, params, versioned=True):
     params = dict(params, access_token=token())
-    url = f"{HOST}/{VER}/{path}" if versioned else f"{HOST}/{path}"
+    url = f"{host()}/{VER}/{path}" if versioned else f"{host()}/{path}"
     data = None
     if method == "GET":
         url += "?" + urllib.parse.urlencode(params)
@@ -71,13 +74,28 @@ def main():
         mid = post(a.video_url, open(a.caption_file).read().strip())
         if a.id_file: open(a.id_file, "w").write(mid)
     elif a.cmd == "refresh":
+        if token().startswith("EA"):
+            print("Facebook/unified-login token: no self-refresh endpoint; check expiry in the 'check' output.")
+            return
         res = call("GET", "refresh_access_token", {"grant_type": "ig_refresh_token"}, versioned=False)
         open(a.out, "w").write(res["access_token"])
         print("token refreshed, expires in", res.get("expires_in"), "s")
     elif a.cmd == "check":
         diagnose()
-        me = call("GET", "me", {"fields": "user_id,username,account_type"})
-        print("connected:", me.get("username"), me.get("account_type"), "user_id", me.get("user_id"))
+        uid = os.environ["IG_USER_ID"].strip()
+        if token().startswith("EA"):
+            try:
+                d = call("GET", "debug_token", {"input_token": token()}).get("data", {})
+                exp = d.get("expires_at", 0)
+                print(f"token type: {d.get('type')}, valid: {d.get('is_valid')}, expires: "
+                      f"{'never' if exp == 0 else time.strftime('%Y-%m-%d', time.gmtime(exp))}, scopes: {d.get('scopes')}")
+            except SystemExit as e:
+                print("(couldn't inspect token)", str(e)[:200])
+            me = call("GET", uid, {"fields": "username,name"})
+            print("connected:", me.get("username"), "user_id", uid)
+        else:
+            me = call("GET", "me", {"fields": "user_id,username,account_type"})
+            print("connected:", me.get("username"), me.get("account_type"), "user_id", me.get("user_id"))
         lim = call("GET", f"{os.environ['IG_USER_ID'].strip()}/content_publishing_limit", {"fields": "quota_usage,config"})
         print("publishing limit:", lim)
 
