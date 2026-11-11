@@ -27,16 +27,16 @@ META = {
 NARRATION = {
     "hook": "Every brick house you've ever seen has one of these hiding inside. Here's how a timber wall frame goes up.",
     "steps": [
-        "First, the wall lines get chalked out on the slab.",
-        "Top and bottom plates are marked out together, so every single stud lines up.",
-        "Then the studs go in, every four-fifty or six hundred mil.",
+        "First, the wall lines are chalked out on the slab.",
+        "The top and bottom plates are marked out together, so every stud lines up.",
+        "Then the studs go in, every four hundred and fifty or six hundred millimetres.",
         "Windows get a lintel on top, and a sill trimmer underneath.",
-        "Noggings go in halfway up, to stiffen it all.",
+        "Noggings go in halfway up to stiffen everything.",
         "Steel strap bracing goes on, so the wall can't rack sideways.",
-        "Then she's stood up, plumbed, and bolted down to the slab.",
+        "Then the frame is stood up, plumbed, and bolted down to the slab.",
         "And the roof trusses sit right on top.",
     ],
-    "result": "Light, strong, and quick to build. That's why most Aussie houses are framed in timber.",
+    "result": "Light, strong, and quick to build. That's why most Australian houses are framed in timber.",
     "end": "Follow for more. Measure twice, follow once.",
 }
 
@@ -180,7 +180,7 @@ def draw_section(ctx, t, tl):
 def model3d():
     from engine.three_d import box, member
     P = []; o = 0
-    P.append(box(-600, 6000, -150, 0, -3200, 700, o, "concrete")); o += 1
+    P.append(box(-600, 6000, -150, 0, -3200, 700, o, "concrete")); P[-1].base = True; o += 1
     # front wall (z 0..90)
     P.append(box(0, 5400, 0, 45, 0, 90, o)); o += 1
     studs = [600 * i for i in range(10)] + [5355]

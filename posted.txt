@@ -1,4 +1,4 @@
 # slug  date(UTC)  instagram_media_id   (written by the post workflow)
-001-waffle-pod-slab  2026-11-11  18642131332062894
-002-tilt-up-panel  2026-11-11  18073646924785736
-003-brick-veneer  2026-11-11  18212304370365069
+# superseded (redone 2026-11-11): 001-waffle-pod-slab  2026-11-11  18642131332062894
+# superseded (redone 2026-11-11): 002-tilt-up-panel  2026-11-11  18073646924785736
+# superseded (redone 2026-11-11): 003-brick-veneer  2026-11-11  18212304370365069

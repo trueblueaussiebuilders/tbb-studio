@@ -24,18 +24,18 @@ META = {
 }
 
 NARRATION = {
-    "hook": "There's polystyrene under a lot of new Aussie houses. Here's how it goes in.",
+    "hook": "There's polystyrene under a lot of new Australian houses. Here's how a waffle pod slab goes in.",
     "steps": [
-        "Site's scraped, and the pad's cut level.",
-        "Sand or crushed rock goes down, compacted flat.",
-        "Edge beams dug, formwork pegged, drainage run under the slab.",
-        "Plastic vapour barrier over the lot, lapped and taped.",
-        "Then the pods. Polystyrene blocks in a grid, with gaps for the ribs.",
-        "Steel goes in. Bars in the ribs, trench mesh in the edges, mesh over the top.",
-        "Steel gets inspected before any concrete turns up.",
-        "Then it's poured, vibrated, screeded and finished.",
+        "The site is scraped, and the building pad is cut level.",
+        "A sand or crushed rock bed goes down, and it's compacted flat.",
+        "Edge beams are dug, formwork is pegged out, and drainage runs under the slab.",
+        "A plastic vapour barrier goes over the whole pad, lapped and taped.",
+        "Then the pods. Polystyrene blocks set out in a grid, with gaps left for the ribs.",
+        "Steel goes in. Bars in the ribs, trench mesh in the edge beams, and mesh across the top.",
+        "Before any concrete arrives, the steel is inspected.",
+        "Then it's poured, vibrated, screeded, and finished.",
     ],
-    "result": "The result is a stiff, ribbed raft, with less concrete and less digging than a conventional slab.",
+    "result": "The result is a stiff, ribbed raft that uses less concrete and less digging than a conventional slab.",
     "end": "Follow for more. Solid foundations, solid follow.",
 }
 
@@ -177,3 +177,26 @@ def draw_section(ctx, t, tl):
     dim_h(ctx, 515, X0, XB, "300", prog(t, r0 + 0.5, 0.6))
     dim_h(ctx, 515, P1L, P1R, "1090", prog(t, r0 + 0.7, 0.6))
     dim_h(ctx, 515, P1R, P2L, "110", prog(t, r0 + 0.9, 0.6))
+
+
+# ---------------------------------------------------------------- 3D model (mm)
+def model3d():
+    from engine.three_d import box
+    P = []; o = 0
+    POD, RIB, EB = 1090, 110, 300
+    nx, nz = 4, 3
+    LX = EB * 2 + nx * POD + (nx - 1) * RIB
+    LZ = EB * 2 + nz * POD + (nz - 1) * RIB
+    P.append(box(-400, LX + 400, -200, -100, -400, LZ + 400, o, "ground")); P[-1].base = True; o += 1           # compacted pad
+    for b in [(0, LX, 0, EB), (0, LX, LZ - EB, LZ), (0, EB, EB, LZ - EB), (LX - EB, LX, EB, LZ - EB)]:
+        P.append(box(b[0], b[1], -400, 310, b[2], b[3], o, "concrete"))                     # edge beams
+    o += 1
+    for j in range(nz):
+        for i in range(nx):
+            x = EB + i * (POD + RIB); z = EB + j * (POD + RIB)
+            P.append(box(x, x + POD, -100, 125, z, z + POD, o, "eps")); o += 1              # pods (row by row)
+    zcut = EB + POD + RIB // 2                                                              # topping over the back
+    P.append(box(EB, LX - EB, 125, 210, -0.0 + 0, zcut, o, "concrete"))
+    cfg = {"target": (LX / 2, 0, LZ / 2), "yaw": 32, "pitch": 34, "dist": 9000, "scale": 1.05,
+           "cy_hook": 1000, "cy_result": 830, "cy_cover": 1020, "cover_scale": 0.95}
+    return P, cfg

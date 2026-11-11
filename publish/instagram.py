@@ -31,7 +31,7 @@ def call(method, path, params, versioned=True):
     params = dict(params, access_token=token())
     url = f"{host()}/{VER}/{path}" if versioned else f"{host()}/{path}"
     data = None
-    if method == "GET":
+    if method in ("GET", "DELETE"):
         url += "?" + urllib.parse.urlencode(params)
     else:
         data = urllib.parse.urlencode(params).encode()
@@ -71,6 +71,7 @@ def main():
     p.add_argument("--id-file"); p.add_argument("--cover-url")
     r = sub.add_parser("refresh"); r.add_argument("--out", required=True)
     sub.add_parser("check")
+    d = sub.add_parser("delete"); d.add_argument("media_ids", nargs="+")
     a = ap.parse_args()
     if a.cmd == "post":
         mid = post(a.video_url, open(a.caption_file).read().strip(), a.cover_url)
@@ -82,6 +83,9 @@ def main():
         res = call("GET", "refresh_access_token", {"grant_type": "ig_refresh_token"}, versioned=False)
         open(a.out, "w").write(res["access_token"])
         print("token refreshed, expires in", res.get("expires_in"), "s")
+    elif a.cmd == "delete":
+        for mid in a.media_ids:
+            print(mid, call("DELETE", mid.strip(), {}))
     elif a.cmd == "check":
         diagnose()
         uid = os.environ["IG_USER_ID"].strip()

@@ -1,0 +1,19 @@
+name: Delete Instagram posts
+
+on:
+  workflow_dispatch:
+    inputs:
+      media_ids:
+        description: "Instagram media IDs to delete (space separated)"
+        required: true
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Delete
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+        run: python3 publish/instagram.py delete ${{ inputs.media_ids }}

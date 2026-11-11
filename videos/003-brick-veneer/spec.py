@@ -28,13 +28,13 @@ NARRATION = {
     "hook": "That brick house? It's actually held up by timber. Here's how brick veneer goes together.",
     "steps": [
         "It starts at the slab edge, usually stepped down so the bricks sit below the floor.",
-        "The timber frame's stood and tied down, and the roof goes on.",
+        "The timber frame is stood and tied down, and the roof goes on.",
         "Wall wrap goes around the outside of the frame.",
-        "First courses go down, with flashing and weep holes to let water out.",
+        "The first courses go down, with flashing and weep holes to let water out.",
         "Wall ties are screwed to the studs, ready for the brickwork.",
         "Then the brick skin goes up, with a cavity behind it.",
         "Inside, insulation batts, then plasterboard.",
-        "And a gap's left under the eaves, so the frame can shrink without cracking the bricks.",
+        "A gap is left under the eaves, so the frame can shrink without cracking the bricks.",
     ],
     "result": "The frame holds the house up. The bricks are basically a tough raincoat.",
     "end": "Follow for more. And don't judge a house by its bricks.",
@@ -185,3 +185,36 @@ def draw_section(ctx, t, tl):
     dim_h(ctx, 432, BX0, BX1, "110", prog(t, r0, 0.6))
     dim_h(ctx, 432, BX1, FX0 - 3, "50", prog(t, r0 + 0.3, 0.6))
     dim_h(ctx, 432, FX0, FX1, "90", prog(t, r0 + 0.6, 0.6))
+
+
+# ---------------------------------------------------------------- 3D model (mm)
+def model3d():
+    from engine.three_d import box
+    P = []; o = 0
+    L1, L2, HT = 4200, 3000, 2400
+    P.append(box(-400, L1 + 600, -300, 0, -L2 - 600, 400, o, "concrete")); P[-1].base = True; o += 1               # slab
+    # timber frame: front wall along +x (z -90..0), return wall along -z (x 0..90)
+    P.append(box(0, L1, 0, 45, -90, 0, o)); P.append(box(0, 90, 0, 45, -L2, -90, o)); o += 1
+    for x in range(0, L1, 600):
+        P.append(box(x, x + 45, 45, HT - 90, -90, 0, o))
+    for z in range(-L2, -90, 600):
+        P.append(box(0, 90, 45, HT - 90, z, z + 45, o))
+    o += 1
+    P.append(box(0, L1, HT - 90, HT, -90, 0, o)); P.append(box(0, 90, HT - 90, HT, -L2, -90, o)); o += 1
+    # brick skin: 110 brick, 50 cavity, courses racked back so the frame shows through
+    course = 86
+    n = HT // course
+    for c in range(n):
+        y0 = c * course; y1 = y0 + course - 10
+        rack = int(c * 115)                                                                    # each course steps back
+        x_end = max(L1 - rack, 400)
+        z_end = -max(L2 - rack, 400)
+        if x_end > 160:
+            P.append(box(-160, x_end, y0, y1, 50, 160, o, "brick"))
+        if -z_end > 50:
+            P.append(box(-160, -50, y0, y1, z_end, 50, o, "brick"))
+        if c % 3 == 2: o += 1
+    o += 1
+    cfg = {"target": (1500, 1200, -1000), "yaw": 38, "pitch": 18, "dist": 10500, "scale": 1.3,
+           "cy_hook": 1010, "cy_result": 820, "cy_cover": 1020, "cover_scale": 1.0}
+    return P, cfg

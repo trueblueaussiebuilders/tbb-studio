@@ -11,8 +11,8 @@ FACES = [(0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (
 
 
 class Part:
-    def __init__(self, verts, order=0, kind="timber"):
-        self.v, self.order, self.kind = verts, order, kind
+    def __init__(self, verts, order=0, kind="timber", base=False):
+        self.v, self.order, self.kind, self.base = verts, order, kind, base
         self.c = tuple(sum(p[i] for p in verts) / 8 for i in range(3))
 
 
@@ -30,6 +30,17 @@ def member(p0, p1, depth, z0, z1, order=0, kind="timber"):
     c = (p1[0] - nx, p1[1] - ny); d = (p0[0] - nx, p0[1] - ny)
     return Part([(d[0], d[1], z0), (c[0], c[1], z0), (b[0], b[1], z0), (a[0], a[1], z0),
                  (d[0], d[1], z1), (c[0], c[1], z1), (b[0], b[1], z1), (a[0], a[1], z1)], order, kind)
+
+
+def member3d(p0, p1, w, h, order=0, kind="steel"):
+    """Straight member between two 3D points with a w x h rectangular section."""
+    d = _norm(_sub(p1, p0))
+    up = (0, 1, 0) if abs(d[1]) < 0.9 else (1, 0, 0)
+    u = _norm(_cross(d, up)); v = _norm(_cross(u, d))
+    def ring(p):
+        return [tuple(p[i] + s1 * u[i] * w / 2 + s2 * v[i] * h / 2 for i in range(3))
+                for s1, s2 in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+    return Part(ring(p0) + ring(p1), order, kind)
 
 
 class Camera:
@@ -58,7 +69,7 @@ def _norm(a):
 
 
 LIGHT_V = _norm((-0.4, 0.8, -0.5))   # in view space (depth axis points away)
-FILL = {"timber": 0.10, "concrete": 0.05, "steel": 0.16, "ground": 0.03}
+FILL = {"timber": 0.10, "concrete": 0.05, "steel": 0.16, "ground": 0.03, "eps": 0.22, "brick": 0.12}
 
 
 def render(ctx, parts, cam, alpha=1.0, highlight=None, appear=None):
@@ -80,7 +91,7 @@ def render(ctx, parts, cam, alpha=1.0, highlight=None, appear=None):
             # lighting in view space: light from upper-left-front
             shade = 0.35 + 0.65 * max(0.0, _dot(n, LIGHT_V))
             polys.append((fc[2], [cam.proj(v) for v in vf], shade, part, a))
-    polys.sort(key=lambda p: -p[0])                                   # far first
+    polys.sort(key=lambda p: (not p[3].base, -p[0]))                  # ground slabs first, then far to near
     for depth, pts, shade, part, a in polys:
         col = mix(BG, BLUE, FILL.get(part.kind, 0.1) + 0.25 * shade)
         ctx.new_path(); ctx.move_to(*pts[0])

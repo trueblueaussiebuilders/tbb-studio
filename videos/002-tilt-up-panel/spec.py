@@ -27,14 +27,14 @@ META = {
 NARRATION = {
     "hook": "These concrete walls are poured lying down. Here's how a tilt-up panel goes up.",
     "steps": [
-        "Footings and the floor slab go in first. The slab is the casting bed.",
-        "Bond breaker gets sprayed on, so the panel won't stick.",
-        "Edge forms are set out, with blockouts for the windows and doors.",
+        "Footings and the floor slab go in first. The slab becomes the casting bed.",
+        "A bond breaker is sprayed on, so the panel won't stick.",
+        "Edge forms are set out, with blockouts for windows and doors.",
         "Mesh goes in, plus cast-in inserts for lifting and bracing.",
-        "Then the panel's poured, finished, and left to gain strength.",
-        "Crane hooks on, and tilts it up off the slab.",
+        "Then the panel is poured, finished, and left to gain strength.",
+        "A crane hooks on and tilts it up off the slab.",
         "It's stood on the footing, plumbed, and braced back to the slab.",
-        "Base gets grouted, and it's tied into the roof steel. Braces come out once the structure's up.",
+        "The base is grouted, and the panel is tied into the roof steel. The braces come out once the structure is up.",
     ],
     "result": "Big concrete walls, cast right there on site, and stood up in a day.",
     "end": "Follow for more. Hold my level.",
@@ -211,3 +211,27 @@ def draw_section(ctx, t, tl):
     r0 = tl.res0
     dim_v(ctx, 175, 482, 1002, "6-12 m TYP", prog(t, r0, 0.6))
     dim_h(ctx, 470, 232, 258, "150-200", prog(t, r0 + 0.4, 0.6))
+
+
+# ---------------------------------------------------------------- 3D model (mm)
+def model3d():
+    from engine.three_d import box, member3d
+    P = []; o = 0
+    P.append(box(-600, 14000, -250, 0, 300, 10000, o, "concrete")); P[-1].base = True; o += 1                     # floor slab / casting bed
+    P.append(box(-600, 14000, -700, 0, -500, 300, o, "concrete")); P[-1].base = True; o += 1                      # footing strip
+    W, H, T = 4200, 7000, 200
+    for i in range(2):                                                                        # standing panels
+        x0 = i * (W + 30)
+        P.append(box(x0, x0 + W, 20, H, 0, T, o, "concrete")); o += 1
+    for i in range(2):                                                                        # braces back to the slab
+        x0 = i * (W + 30)
+        for xb in (x0 + 900, x0 + W - 900):
+            P.append(member3d((xb, 4600, T), (xb, 60, 4800), 110, 110, o, "steel"))
+            P.append(box(xb - 200, xb + 200, 0, 30, 4700, 5000, o, "steel"))
+        o += 1
+    P.append(box(9000, 9000 + W, 0, T, 1500, 1500 + H, o, "concrete")); o += 1                # next panel, cast flat
+    P.append(box(9000 - 60, 9000 + W + 60, 0, 260, 1440, 1500, o, "timber"))                  # edge forms
+    P.append(box(9000 - 60, 9000 + W + 60, 0, 260, 1500 + H, 1560 + H, o, "timber"))
+    cfg = {"target": (6500, 2600, 3600), "yaw": 28, "pitch": 20, "dist": 26000, "scale": 1.45,
+           "cy_hook": 1000, "cy_result": 820, "cy_cover": 1020, "cover_scale": 1.0}
+    return P, cfg
