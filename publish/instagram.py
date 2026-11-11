@@ -12,8 +12,20 @@ HOST = os.environ.get("IG_HOST", "https://graph.instagram.com")
 VER = os.environ.get("IG_GRAPH_VERSION", "v26.0")
 
 
+def token():
+    # tolerate stray whitespace / quotes from copy-paste into GitHub secrets
+    return os.environ.get("IG_ACCESS_TOKEN", "").strip().strip('"').strip("'").strip()
+
+
+def diagnose():
+    t = token(); uid = os.environ.get("IG_USER_ID", "").strip()
+    kind = {"IG": "Instagram token (correct type)", "EA": "Facebook token (wrong type for this setup)"}.get(t[:2], "unrecognised")
+    print(f"token: starts '{t[:2]}', length {len(t)}, looks like {kind}; contains spaces: {' ' in t}")
+    print(f"user id: length {len(uid)}, all digits: {uid.isdigit()}")
+
+
 def call(method, path, params, versioned=True):
-    params = dict(params, access_token=os.environ["IG_ACCESS_TOKEN"])
+    params = dict(params, access_token=token())
     url = f"{HOST}/{VER}/{path}" if versioned else f"{HOST}/{path}"
     data = None
     if method == "GET":
@@ -25,12 +37,12 @@ def call(method, path, params, versioned=True):
             return json.loads(r.read())
     except urllib.error.HTTPError as e:
         body = e.read().decode(errors="replace")
-        body = body.replace(os.environ["IG_ACCESS_TOKEN"], "***")
+        body = body.replace(token(), "***") if token() else body
         sys.exit(f"Instagram API error {e.code} on {path}: {body}")
 
 
 def post(video_url, caption):
-    uid = os.environ["IG_USER_ID"]
+    uid = os.environ["IG_USER_ID"].strip()
     c = call("POST", f"{uid}/media", {"media_type": "REELS", "video_url": video_url, "caption": caption, "share_to_feed": "true"})
     cid = c["id"]; print("container", cid)
     for _ in range(60):                       # up to ~10 min for Instagram to fetch + process the video
@@ -63,9 +75,10 @@ def main():
         open(a.out, "w").write(res["access_token"])
         print("token refreshed, expires in", res.get("expires_in"), "s")
     elif a.cmd == "check":
+        diagnose()
         me = call("GET", "me", {"fields": "user_id,username,account_type"})
         print("connected:", me.get("username"), me.get("account_type"), "user_id", me.get("user_id"))
-        lim = call("GET", f"{os.environ['IG_USER_ID']}/content_publishing_limit", {"fields": "quota_usage,config"})
+        lim = call("GET", f"{os.environ['IG_USER_ID'].strip()}/content_publishing_limit", {"fields": "quota_usage,config"})
         print("publishing limit:", lim)
 
 
