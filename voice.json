@@ -1,0 +1,8 @@
+{
+  "_note": "ElevenLabs voices tried in order. Baxter = calm Australian male (Voice Library, needs a paid plan for API use). Charlie = older default Australian male (only on accounts made before Mar 2026, retired 31 Dec 2026). Override with the ELEVENLABS_VOICE_ID secret if you want a different voice.",
+  "elevenlabs_voices": [
+    {"name": "Baxter", "id": "jSuBIjxMKhqIfb0wCK1F"},
+    {"name": "Charlie", "id": "IKne3meq5aSn9XLyUdCD"}
+  ],
+  "model": "eleven_multilingual_v2"
+}

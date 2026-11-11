@@ -14,29 +14,54 @@ def _decode(data: bytes) -> np.ndarray:
     return np.frombuffer(out, dtype=np.float32).copy()
 
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _voice_candidates():
+    cfg = json.load(open(os.path.join(ROOT, "voice.json")))
+    env = os.environ.get("ELEVENLABS_VOICE_ID", "").strip()
+    cands = cfg["elevenlabs_voices"]
+    if env and " " not in env and len(env) >= 15:     # a real-looking override wins; placeholder text is ignored
+        cands = [{"name": "secret override", "id": env}] + cands
+    return cands, cfg.get("model", "eleven_multilingual_v2")
+
+
+def _tts(key, voice_id, model, line, prev=None, nxt=None):
+    body = {"text": line, "model_id": model,
+            "voice_settings": {"stability": 0.55, "similarity_boost": 0.75, "style": 0.0, "use_speaker_boost": True}}
+    if prev: body["previous_text"] = prev      # neighbouring text keeps intonation consistent across lines
+    if nxt: body["next_text"] = nxt
+    req = urllib.request.Request(
+        f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_44100_128",
+        data=json.dumps(body).encode(), method="POST",
+        headers={"xi-api-key": key, "Content-Type": "application/json", "Accept": "audio/mpeg"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        return _decode(r.read())
+
+
 def _elevenlabs(lines):
-    key, voice = os.environ["ELEVENLABS_API_KEY"].strip(), os.environ["ELEVENLABS_VOICE_ID"].strip()
-    if " " in key or " " in voice or len(voice) < 15:
-        raise SystemExit(f"ElevenLabs secrets don't look right (key length {len(key)}, voice ID length {len(voice)}, "
-                         "spaces present: {}). Paste the real API key and voice ID into the repo secrets.".format(" " in key + voice))
-    model = os.environ.get("ELEVENLABS_MODEL", "eleven_multilingual_v2")
-    out, prev = [], None
-    for i, line in enumerate(lines):
-        body = {"text": line, "model_id": model,
-                "voice_settings": {"stability": 0.55, "similarity_boost": 0.75, "style": 0.0, "use_speaker_boost": True}}
-        # neighbouring text keeps intonation consistent across separately generated lines
-        if prev: body["previous_text"] = prev
-        if i + 1 < len(lines): body["next_text"] = lines[i + 1]
-        req = urllib.request.Request(
-            f"https://api.elevenlabs.io/v1/text-to-speech/{voice}?output_format=mp3_44100_128",
-            data=json.dumps(body).encode(), method="POST",
-            headers={"xi-api-key": key, "Content-Type": "application/json", "Accept": "audio/mpeg"})
+    key = os.environ["ELEVENLABS_API_KEY"].strip().strip('"').strip("'")
+    if " " in key or len(key) < 20:
+        raise SystemExit(f"ELEVENLABS_API_KEY secret doesn't look like a real key (length {len(key)}). Paste the key itself.")
+    cands, model = _voice_candidates()
+    errors = []
+    for v in cands:                      # pick the first voice this account can use
         try:
-            with urllib.request.urlopen(req, timeout=120) as r:
-                out.append(_decode(r.read()))
+            first = _tts(key, v["id"], model, lines[0], nxt=lines[1] if len(lines) > 1 else None)
+            print(f"ElevenLabs voice: {v['name']} ({v['id']})")
+            break
         except urllib.error.HTTPError as e:
-            raise SystemExit(f"ElevenLabs error {e.code}: {e.read().decode(errors='replace')[:300]}")
-        prev = line
+            msg = e.read().decode(errors="replace")[:200]
+            errors.append(f"{v['name']}: HTTP {e.code} {msg}")
+            if e.code == 401: break      # bad key, no point trying other voices
+    else:
+        raise SystemExit("No ElevenLabs voice worked:\n  " + "\n  ".join(errors) +
+                         "\n(402 'payment_required' means the free plan can't use Voice Library voices via the API.)")
+    if errors and "HTTP 401" in errors[-1]:
+        raise SystemExit("ElevenLabs rejected the API key (401):\n  " + errors[-1])
+    out = [first]
+    for i in range(1, len(lines)):
+        out.append(_tts(key, v["id"], model, lines[i], prev=lines[i - 1], nxt=lines[i + 1] if i + 1 < len(lines) else None))
     return out
 
 
@@ -53,7 +78,7 @@ def _kokoro(lines):
 
 
 def engine_name():
-    return "elevenlabs" if os.environ.get("ELEVENLABS_API_KEY") and os.environ.get("ELEVENLABS_VOICE_ID") else "kokoro"
+    return "elevenlabs" if os.environ.get("ELEVENLABS_API_KEY", "").strip() else "kokoro"
 
 
 def synth(lines):
