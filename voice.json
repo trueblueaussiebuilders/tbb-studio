@@ -1,6 +1,6 @@
 {
-  "engine": "chatterbox",
-  "kokoro_voice": "am_michael",
+  "engine": "kokoro",
+  "kokoro_voice": "af_heart",
   "_note": "engine: 'kokoro' (free, generic), 'chatterbox' (clone of Mathew's voice from the encrypted voice/ref.wav.enc, needs VOICE_KEY secret) or 'elevenlabs'.",
   "elevenlabs_voices": [
     {
@@ -22,5 +22,6 @@
     "tempo": 0.95,
     "line_gap": 0.45,
     "_reference_note": "ref_female = Mathew's sample converted to female (pitch x1.71, formants x1.17). ref = his original voice."
-  }
+  },
+  "kokoro_speed": 1.0
 }
