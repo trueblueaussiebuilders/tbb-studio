@@ -8,3 +8,4 @@
 006-remove-load-bearing-wall
 007-block-retaining-wall
 008-steel-portal-frame
+009-suspended-slab
