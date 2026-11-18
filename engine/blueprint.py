@@ -240,28 +240,36 @@ def draw_frame(spec, tl, t):
     ctx.set_source_surface(background()); ctx.paint()
 
     # header
+    # Instant hook: frame 0 is already a full, readable frame (Reels autoplay starts on it), so the
+    # header is on screen from t=0 and only the rule + subtitle animate in.
     series = M.get("series", SERIES)
-    text(ctx, series, 90, 150, 30, BLUE, bold=True, spacing=6, chars=int(len(series) * clamp(t / 1.0)))
-    text(ctx, M["title"], 88, 235, 76 if len(M["title"]) <= 19 else 60, WHITE, bold=True,
-         chars=int(len(M["title"]) * clamp((t - 0.3) / 1.0)))
-    text(ctx, M["subtitle"], 90, 285, 26, WHITE, alpha=0.75 * clamp((t - 0.9) / 0.5))
-    polyline(ctx, [(90, 320), (990, 320)], prog(t, 0.2, 1.2), WHITE, 2, 0.6)
+    text(ctx, series, 90, 150, 30, BLUE, bold=True, spacing=6)
+    text(ctx, M["title"], 88, 235, 76 if len(M["title"]) <= 19 else 60, WHITE, bold=True)
+    text(ctx, M["subtitle"], 90, 285, 26, WHITE, alpha=0.75 * clamp((t + 0.2) / 0.5))
+    polyline(ctx, [(90, 320), (990, 320)], prog(t, 0.0, 0.8), WHITE, 2, 0.6)
 
     # hook
     if t < tl.hook + 0.4:
-        a = clamp(t / 0.3) * (1 - clamp((t - tl.hook + 0.2) / 0.5))
+        a = 1 - clamp((t - tl.hook + 0.2) / 0.5)
         y0, gap = (470, 82) if m3 else (760, 95)
+        last = len(M["hook"]) - 1
         for i, line in enumerate(M["hook"]):
-            k = clamp((t - 0.4 - i * 0.35) / 0.35)
-            col = ORANGE if i == len(M["hook"]) - 1 else WHITE
-            text(ctx, line, W / 2, y0 + i * gap + (1 - ease(k)) * 30, 64, col, alpha=a * k, bold=True, anchor="c")
-        k = clamp((t - 1.6) / 0.4)
+            # first line is fully on screen at t=0; the rest land fast, the punchline last with a pop
+            k = 1.0 if i == 0 else clamp((t - 0.15 - (i - 1) * 0.3 - (0.15 if i == last else 0)) / 0.2)
+            col = ORANGE if i == last else WHITE
+            if i == last and 0 < k:
+                pop = 1 + 0.18 * (1 - ease(clamp((t - 0.6 - (last - 1) * 0.3) / 0.25)))
+                ctx.save(); ctx.translate(W / 2, y0 + i * gap - 22); ctx.scale(pop, pop)
+                text(ctx, line, 0, 22, 64, col, alpha=a * k, bold=True, anchor="c"); ctx.restore()
+            else:
+                text(ctx, line, W / 2, y0 + i * gap + (1 - ease(k)) * 24, 64, col, alpha=a * k, bold=True, anchor="c")
+        k = clamp((t - 1.0) / 0.3)
         text(ctx, M["hook_sub"], W / 2, y0 + len(M["hook"]) * gap + 40, 32, BLUE, alpha=a * k, bold=True, anchor="c", spacing=2)
         if m3:
             parts, cfg = m3
             n = max(p.order for p in parts) + 1
             span = max(tl.hook - 1.0, 1.5)
-            appear = lambda part: clamp((t - 0.2 - span * part.order / n) / 0.45)
+            appear = lambda part: 1.0 if part.order == 0 else clamp((t + 0.1 - span * part.order / n) / 0.45)
             yaw = cfg["yaw"] + 14 * (t / max(tl.hook, 1))
             _draw3d(ctx, spec, cfg.get("cy_hook", 1010), yaw, alpha=a, appear=appear)
 

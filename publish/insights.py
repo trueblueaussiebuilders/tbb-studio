@@ -22,10 +22,15 @@ METRICS = ["views", "reach", "likes", "comments", "shares", "saved", "total_inte
 COLUMNS = ["slug", "category", "title", "hook", "posted", "media_id", "permalink", "fetched_utc",
            "views", "reach", "likes", "comments", "shares", "saved", "total_interactions",
            "avg_watch_s", "total_watch_s", "unsupported"]
-PERMISSION_HINT = ("The Instagram token has no insights permission. In the Meta app (developers.facebook.com -> your app -> "
-                   "Instagram -> API setup with Instagram login), add the permission 'instagram_business_manage_insights' "
-                   "(Facebook-login apps: 'instagram_manage_insights'), then click 'Generate token' for "
-                   "@trueblueaussiebuilders again and paste the new token into the IG_ACCESS_TOKEN repo secret.")
+def permission_hint():
+    if ig.token().startswith("EA"):     # Facebook-login token (what this account uses)
+        return ("The Instagram token has no insights permission. In the Meta app (developers.facebook.com -> your app), "
+                "add the permission 'instagram_manage_insights' (keep instagram_basic, instagram_content_publish, "
+                "pages_show_list, pages_read_engagement), generate a new token for the Facebook Page linked to "
+                "@trueblueaussiebuilders with that permission ticked, and paste it into the IG_ACCESS_TOKEN repo secret.")
+    return ("The Instagram token has no insights permission. In the Meta app (developers.facebook.com -> your app -> "
+            "Instagram -> API setup with Instagram login), add the permission 'instagram_business_manage_insights', "
+            "then click 'Generate token' for @trueblueaussiebuilders again and paste it into the IG_ACCESS_TOKEN repo secret.")
 
 
 class ApiError(Exception):
@@ -136,9 +141,9 @@ def main():
         for r in rows: w.writerow({k: r.get(k, "") for k in COLUMNS})
     print(f"wrote {len(rows)} rows to {a.out}")
     if no_perm:
-        print(f"::warning::{PERMISSION_HINT}")
+        print(f"::warning::{permission_hint()}")
         summ = os.environ.get("GITHUB_STEP_SUMMARY")
-        if summ: open(summ, "a").write(f"**Insights blocked:** {PERMISSION_HINT}\n")
+        if summ: open(summ, "a").write(f"**Insights blocked:** {permission_hint()}\n")
     if rows and failed == len(rows):
         sys.exit("Every media lookup failed. Check the IG_ACCESS_TOKEN secret (run the maintenance workflow).")
 
