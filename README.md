@@ -34,6 +34,8 @@ Automated blueprint-style construction Reels for [@trueblueaussiebuilders](https
 ```
 videos/002-tilt-up-panel/spec.py    # META (on-screen text), NARRATION (voice lines), CAPTION, draw_section()
 ```
+Optional: `model3d()` (3D model for the hook, result and cover) and `META["xray"] = {"after_step": 4, "upto": 12, "hot": [5, 6]}`
+(a 3D "built so far" interlude at the end of that step; see IMPROVEMENTS.md).
 Then add `002-tilt-up-panel` to `queue.txt`. Shared look, panels, timing and end card live in `engine/blueprint.py`.
 
 Local build (no keys needed, uses the free Kokoro voice):

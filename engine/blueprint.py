@@ -225,12 +225,38 @@ def _model(spec):
     return _MODEL_CACHE[id(spec)]
 
 
-def _draw3d(ctx, spec, cy, yaw, alpha=1.0, appear=None, pitch=None, scale_mul=1.0):
+def _draw3d(ctx, spec, cy, yaw, alpha=1.0, appear=None, pitch=None, scale_mul=1.0, highlight=None, ghost=None):
     from engine import three_d as td
     parts, cfg = _model(spec)
     cam = td.Camera(cfg["target"], yaw, cfg.get("pitch", 18) if pitch is None else pitch, cfg["dist"],
                     cfg["scale"] * scale_mul, 540, cy)
-    td.render(ctx, parts, cam, alpha=alpha, appear=appear)
+    td.render(ctx, parts, cam, alpha=alpha, appear=appear, highlight=highlight, ghost=ghost)
+
+
+def xray_window(spec, tl):
+    """Mid-video 3D "x-ray" interlude (opt-in via META["xray"]).
+
+    META["xray"] = {"after_step": 4, "upto": 15, "hot": [8, 9, 10]}
+      after_step: the interlude fills the last ~2.6s of this step (its drawing is finished by then)
+      upto:       model parts with order <= upto are drawn solid (built so far); later ones are faint ghosts
+      hot:        part orders drawn with orange edges (what this part of the video is about)
+      secs:       optional length (default 2.6); scale: optional 3D size multiplier (default 0.92)
+    Returns (t0, t1) or None."""
+    cfg = spec.META.get("xray")
+    if not cfg or not _model(spec): return None
+    k = cfg["after_step"]
+    if not 1 <= k <= tl.n: return None
+    dur = tl.tim["steps"][k - 1]
+    L = min(cfg.get("secs", 2.6), dur - 1.8)
+    if L < 1.4: return None
+    t1 = tl.step_end(k)
+    return (t1 - L, t1)
+
+
+def _xray_amount(spec, tl, t):
+    w = xray_window(spec, tl)
+    if not w or not (w[0] <= t < w[1]): return 0.0, w
+    return min(ease((t - w[0]) / 0.3), ease((w[1] - t) / 0.3)), w
 
 
 def draw_frame(spec, tl, t):
@@ -274,18 +300,29 @@ def draw_frame(spec, tl, t):
             _draw3d(ctx, spec, cfg.get("cy_hook", 1010), yaw, alpha=a, appear=appear)
 
     # section label + the video's own drawing
+    kx, xw = _xray_amount(spec, tl, t)
     text(ctx, M.get("section_label", "SECTION A-A  (NTS)"), 90, 385, 24, WHITE,
-         alpha=0.7 * clamp((t - tl.s(1)) / 0.4), bold=True, spacing=2)
+         alpha=0.7 * clamp((t - tl.s(1)) / 0.4) * clamp(1 - 2 * kx), bold=True, spacing=2)
     k3 = 0.0
     if m3 and t >= tl.res0:
         dur = tl.end0 - tl.res0
         k3 = ease((t - tl.res0 - 0.45 * dur) / 0.7)
+    k3 = max(k3, kx)
     if k3 < 1:
         if k3 > 0:
             ctx.push_group(); spec.draw_section(ctx, t, tl); ctx.pop_group_to_source(); ctx.paint_with_alpha(1 - k3)
         else:
             spec.draw_section(ctx, t, tl)
-    if k3 > 0:
+    if kx > 0:
+        # x-ray interlude: the 3D model so far, current work in orange, the rest as faint ghosts, orbiting
+        cfg, xc = m3[1], M["xray"]
+        u = (t - xw[0]) / (xw[1] - xw[0])
+        hot = set(xc.get("hot", []))
+        _draw3d(ctx, spec, cfg.get("cy_result", 820), cfg["yaw"] + 30 - 45 * ease(u), alpha=kx,
+                pitch=cfg.get("pitch", 18) + 6, scale_mul=xc.get("scale", 0.92), highlight=lambda p: p.order in hot,
+                ghost=lambda p: not p.base and p.order > xc["upto"])
+        text(ctx, "3D  //  BUILT SO FAR", 90, 385, 24, BLUE, alpha=0.9 * clamp(2 * kx - 1), bold=True, spacing=2)
+    elif k3 > 0:
         cfg = m3[1]
         u = (t - tl.res0) / max(tl.end0 - tl.res0, 1)
         _draw3d(ctx, spec, cfg.get("cy_result", 820), cfg["yaw"] - 25 + 50 * u, alpha=k3)

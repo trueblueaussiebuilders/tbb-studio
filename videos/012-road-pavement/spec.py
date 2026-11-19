@@ -12,6 +12,7 @@ META = {
     "hook": ["THE BLACK STUFF", "IS THE THIN BIT.", "IT'S MOSTLY ROCK."],
     "hook_sub": "HOW A ROAD IS BUILT",
     "cover": ["WHAT'S UNDER", "THE ROAD?", "MOSTLY ROCK."],
+    "xray": {"after_step": 5, "upto": 5, "hot": [3, 4, 5]},     # kerb and channel on the subbase
     "steps": [
         ("BOX OUT", "Topsoil is stripped. Then the road is dug out down to the design level."),
         ("SUBGRADE", "The natural ground is trimmed to shape and rolled. Soft spots are dug out and replaced."),

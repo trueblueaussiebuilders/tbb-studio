@@ -12,6 +12,7 @@ META = {
     "hook": ["THIS FLOOR HAS", "STEEL CABLES", "PULLED TIGHT."],
     "hook_sub": "HOW A PT SLAB IS BUILT",
     "cover": ["THE CABLES", "ARE PULLED", "AFTER THE POUR."],
+    "xray": {"after_step": 4, "upto": 12, "hot": [5, 6, 7, 8, 9, 10, 12]},   # tendons + anchors before the pour
     "steps": [
         ("FORMWORK", "A formwork deck goes up on props, with edge forms around the slab."),
         ("BOTTOM BARS", "Bar chairs go down, then the bottom reinforcement. Extra bars go behind each anchor."),

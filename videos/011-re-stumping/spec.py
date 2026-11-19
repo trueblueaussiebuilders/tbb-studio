@@ -12,6 +12,7 @@ META = {
     "hook": ["SLOPING FLOORS?", "STICKING DOORS?", "CHECK THE STUMPS."],
     "hook_sub": "HOW A HOUSE IS RE-STUMPED",
     "cover": ["SLOPING FLOORS?", "TIME FOR", "NEW STUMPS."],
+    "xray": {"after_step": 6, "upto": 4, "hot": [2, 3, 4], "scale": 1.0},     # new stumps in 3D, the house above as a ghost
     "steps": [
         ("OLD STUMPS", "Timber stumps rot at ground level or sink. The floor drops and doors start to stick."),
         ("CHECK LEVELS", "The floor is surveyed to see how far out it is. A permit is arranged where required."),

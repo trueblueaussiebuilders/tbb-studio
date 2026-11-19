@@ -10,7 +10,28 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
   004 timber wall frame 7, 009 suspended slab 6, 006 load-bearing wall 3, 001/002/007 0. Too early to call a pattern;
   structural steel and "it's held up by timber" style surprise hooks are early leaders.
 
+- 2026-11-19: still no views / watch time (insights permission not yet enabled). Likes as of 2026-11-18: 008 steel
+  portal frame 30, 004 timber wall frame 21 (posted a day later than most, so still climbing), 003 and 005 9 each.
+  Structural/framing "skeleton" topics lead on likes; keep alternating them in. Not enough data to judge hooks.
+
 ## Changelog
+
+### 2026-11-19: Mid-video 3D "x-ray" interlude
+- **What:** new optional spec field `META["xray"] = {"after_step": k, "upto": N, "hot": [orders], "scale": 1.0}`.
+  For the last ~2.6s of step k the 2D section cross-fades to the 3D model, orbiting ~45 degrees: parts with
+  build order <= `upto` are solid, the parts this step is about (`hot`) have orange edges, and everything not built
+  yet is drawn as faint blue "ghost" edges, hidden behind solid parts. The section label swaps to
+  "3D // BUILT SO FAR", then the drawing fades back for the next step. Skipped automatically if the step is too
+  short (< 3.2s). Specs without the field build exactly as before.
+- **Why:** the 3D model only appeared in the hook and the result, so the middle 40-50s were all 2D linework. A
+  moving 3D view about halfway through is a pattern interrupt and shows how the part being built fits the whole.
+- **First video:** 011-re-stumping (posts 2026-11-19, x-ray at the end of "New stumps": the new stumps in orange,
+  the bearers, joists and wall frame above as ghosts). Also set on 012 (kerb and channel) and 013 (tendons + anchors
+  before the pour).
+- **How to use in new specs:** pick a step where the 3D model has something to show (usually step 4-6), print the
+  model's part orders, set `upto` to the last order built by the end of that step and `hot` to that step's orders.
+- **Files:** engine/blueprint.py (xray_window, draw_frame), engine/three_d.py (render ghost=), videos/011-013 specs.
+
 
 ### 2026-11-18: Instant hook (scroll-stopping first frame)
 - **What:** frame 0 used to be an empty blueprint (header typed on from nothing, hook text faded in from 0.4s,
@@ -40,9 +61,9 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
    data-driven decision below.
 2. **Music bed ducked under the voice + soft "tick" on each label reveal.** Videos are voice-only. A quiet,
    royalty-free generated bed (synthesised in numpy, no licensing risk) adds energy and retention. Impact: high.
-3. **3D "x-ray" cutaway in the middle of the video.** The 3D model only appears in the hook and result; a 2-3s
-   3D orbit at step 4 or 5 with the current part highlighted orange (render(highlight=...) already exists) would add
-   a pattern interrupt mid-video. Impact: high on average watch time.
+3. **Shorter hook narration (target under 4.5s).** The hook scene runs as long as its voice line: 6.3s on 011,
+   7.2s on 012 and 7.3s on 013, so step 1 doesn't start until ~7s. Trim the hook line to the punchline plus
+   "Here's how", and/or start the step-1 drawing under the end of the hook. Impact: high on 3s hold rate.
 4. **Auto layout check (`tools/check.py`).** Render frames at every label's full-on time and flag label plates that
    overlap each other, text in the bottom 20% / right edge, or a 3D model that clips the frame. Impact: fewer
    manual fixes, safer automation.

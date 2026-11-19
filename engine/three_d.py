@@ -134,9 +134,11 @@ def _seg(pcol, acov, zb, A, B, dA, dB, color, pa, hw):
     asb *= (1.0 - saf); asb += saf
 
 
-def render(ctx, parts, cam, alpha=1.0, highlight=None, appear=None):
+def render(ctx, parts, cam, alpha=1.0, highlight=None, appear=None, ghost=None):
     """Draw parts into a z-buffered layer, then composite onto ctx with `alpha`.
-    appear(part) -> 0..1 controls build-up (drop-in + fade). highlight(part) -> True paints edges orange."""
+    appear(part) -> 0..1 controls build-up (drop-in + fade). highlight(part) -> True paints edges orange.
+    ghost(part) -> True draws that part as faint blue edges only (no faces), hidden behind solid parts:
+    the "x-ray" look for parts that aren't built yet."""
     # gather visible parts; composite far -> near so build-up fades blend correctly
     vis_parts = []
     for part in parts:
@@ -165,6 +167,8 @@ def render(ctx, parts, cam, alpha=1.0, highlight=None, appear=None):
     vis_parts = [(cz, part, vv, [((x - bx0) * SS, (y - by0) * SS) for x, y in sp], a)
                  for cz, part, vv, sp, a in vis_parts]
 
+    ghosts = [g for g in vis_parts if ghost and ghost(g[1])]
+    vis_parts = [g for g in vis_parts if not (ghost and ghost(g[1]))]
     for cz, part, vv, sp, a in vis_parts:
         cv = tuple(sum(v[j] for v in vv) / 8 for j in range(3))
         for f in FACES:
@@ -188,6 +192,10 @@ def render(ctx, parts, cam, alpha=1.0, highlight=None, appear=None):
         ew = (1.6 if part.kind != "ground" else 1.0) * SS / 2.0
         for i, j in _EDGES:
             _seg(pcol, acov, zb, sp[i], sp[j], vv[i][2], vv[j][2], edge, ea, ew)
+
+    for cz, part, vv, sp, a in ghosts:                               # x-ray: not built yet
+        for i, j in _EDGES:
+            _seg(pcol, acov, zb, sp[i], sp[j], vv[i][2], vv[j][2], BLUE, a * 0.45, 1.1 * SS / 2.0)
 
     # downsample SS -> 1x (box filter) and composite the bounding box onto the cairo context
     pcol = pcol.reshape(bh, SS, bw, SS, 3).mean((1, 3))
