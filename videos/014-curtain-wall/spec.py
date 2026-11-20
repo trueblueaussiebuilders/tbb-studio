@@ -27,7 +27,7 @@ META = {
 }
 
 NARRATION = {
-    "hook": "That glass wall isn't holding the building up. It hangs on hooks. Here's how.",
+    "hook": "That glass wall isn't holding the building up. It hangs on hooks.",
     "steps": [
         "First, surveyors mark a line off every slab edge. The wall is set to that line, not to the concrete.",
         "Steel anchor channels are cast into the edge of each slab, when the floor is poured.",

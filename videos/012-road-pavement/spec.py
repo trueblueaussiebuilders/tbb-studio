@@ -27,7 +27,7 @@ META = {
 }
 
 NARRATION = {
-    "hook": "The asphalt on a road is only the thin top layer. Most of the road is crushed rock. Here's how a road is built.",
+    "hook": "The asphalt is the thin bit. A road is mostly crushed rock.",
     "steps": [
         "First, the topsoil is stripped. Then the road is dug out, down to the design level. This is called boxing out.",
         "The natural ground underneath is the subgrade. It's trimmed to shape and rolled. Any soft spots are dug out and replaced.",

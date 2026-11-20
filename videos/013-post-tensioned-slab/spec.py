@@ -27,7 +27,7 @@ META = {
 }
 
 NARRATION = {
-    "hook": "This concrete floor has steel cables inside it, pulled tight after the pour. Here's how a post-tensioned slab is built.",
+    "hook": "This floor has steel cables inside. They're pulled tight after the pour.",
     "steps": [
         "First, a formwork deck goes up on props. Edge forms go around the slab.",
         "Bar chairs go down, then the bottom reinforcement. Extra bars go in behind each anchor, where the forces are high.",
@@ -203,7 +203,7 @@ def draw_section(ctx, t, tl):
         for k in range(3):                                                              # bulb ends of strands
             dot(ctx, ER - 34 + k * 0, MID - 12 + k * 12, 5, c, pe)
     label(ctx, clamp((t - s4 - 0.6) / 0.8), c, (EL + 8, MID - 22), (110, 482), "LIVE END", a=gone(t, s8))
-    label(ctx, clamp((t - s4 - 1.4) / 0.8), c, (ER - 20, MID - 26), (940, 520), "DEAD END", anchor="r", a=gone(t, s6))
+    label(ctx, clamp((t - s4 - 1.4) / 0.8), c, (ER - 20, MID - 26), (940, 596), "DEAD END", anchor="r", a=gone(t, s6))
 
     # 5 top bars over the middle column + inspection stamp
     c = tl.col(5, t)

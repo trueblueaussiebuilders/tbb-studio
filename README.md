@@ -38,6 +38,11 @@ Optional: `model3d()` (3D model for the hook, result and cover) and `META["xray"
 (a 3D "built so far" interlude at the end of that step; see IMPROVEMENTS.md).
 Every video gets a synthesised music bed ducked under the voice plus light sound effects (`engine/audio.py`);
 turn them off per video with `META["music"] = False` / `META["sfx"] = False`.
+Keep `NARRATION["hook"]` to one or two short sentences (about 12 words, no "Here's how": `hook_sub` says it on screen)
+so the hook scene stays under 4.5s. Check the layout automatically before committing:
+```
+python tools/check.py videos/002-tilt-up-panel      # or --queue for everything not yet posted; --out DIR saves problem frames
+```
 Then add `002-tilt-up-panel` to `queue.txt`. Shared look, panels, timing and end card live in `engine/blueprint.py`.
 
 Local build (no keys needed, uses the free Kokoro voice):

@@ -22,6 +22,34 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
 
 ## Changelog
 
+### 2026-11-20: Automatic layout check (`tools/check.py`)
+- **What:** `python tools/check.py --queue` (or video folders) renders every 0.25s of each video plus the cover with
+  the engine instrumented (text, leader/line drawing and 3D are probed, fades through cairo groups are tracked) and
+  reports: overlapping labels, a line or another label's leader drawn over a label, text off the left/right edge,
+  key text in the bottom 20%, 3D model off the frame / into the header / bottom 20% / the cover title strip (errors);
+  3D model small or covering text, hook over 4.5s, video over 75s (warnings). Overlaps must last 0.5s+ so normal
+  cross-fades pass. `--out DIR` saves the frame of each problem with a red box. Exit code 1 on any error.
+  Uses real timings if a fresh `<slug>.timings.json` is in build/ or out/, `--voice` for exact ones, otherwise an
+  estimate from the narration word counts. About 30s per video on 2 cores.
+- **Proved on:** a broken copy of 014 (the BRACKET leader through CAST-IN CHANNEL from my first draft, a label pushed
+  off the right edge, an oversized 3D model): all caught. Real catch on the queue: in 013 the TOP BARS leader ran
+  through the DEAD END label (t~33-38s); fixed by moving DEAD END down a row. 008, 011, 012, 014 clean.
+- **How to use:** run it on every new video before committing (replaces most of the manual PNG review; still look
+  at the cover and a contact sheet for taste).
+- **Files:** tools/check.py (new), videos/013 spec (label row).
+
+### 2026-11-20: Shorter hooks (step 1 starts by ~4s instead of ~7s)
+- **What:** engine/voice.py reads the hook tighter than the steps: 0.22s between hook sentences (was 0.4) and a 0.3s
+  pause before step 1 (was 0.5). The voice itself and voice.json are unchanged. Hook narration on the queued videos
+  is cut to the claim + punchline; the spoken "Here's how a ... is built" is dropped because the on-screen
+  hook_sub already says it. Measured with the Kokoro voice: 012 7.24s -> 3.82s, 013 ~7.3s -> 4.09s,
+  014 5.46s -> 3.95s.
+- **Why:** step 1 (the first visual change after the hook) didn't start until ~7s; viewers decide in 3s.
+- **Rule for new specs:** NARRATION["hook"] is one or two short sentences, about 12 words, no "Here's how".
+  tools/check.py warns when the hook scene is over 4.5s.
+- **First video:** 012-road-pavement (posts 2026-11-20).
+- **Files:** engine/voice.py, videos/012, 013, 014 specs.
+
 ### 2026-11-20: Music bed + sound effects
 - **What:** new `engine/audio.py`, called from `engine/build.py` right after the voiceover. Every video now gets a
   numpy-synthesised music bed (soft pad chords vi-IV-I-V at 96 BPM, a quiet plucked arpeggio from 0.2s, and a soft
@@ -86,23 +114,19 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
    API says `(#10) Application does not have permission`. Add `instagram_manage_insights` to the Meta app, generate a
    new Page token for the account with it ticked, and update the IG_ACCESS_TOKEN secret. Impact: unlocks every
    data-driven decision below.
-2. **Shorter hook narration (target under 4.5s).** The hook scene runs as long as its voice line: 6.3s on 011,
-   7.2s on 012 and 7.3s on 013 (014 was written short: 5.5s), so step 1 doesn't start until ~7s. Trim the hook line to the punchline plus
-   "Here's how", and/or start the step-1 drawing under the end of the hook. Impact: high on 3s hold rate.
-3. **Auto layout check (`tools/check.py`).** Render frames at every label's full-on time and flag label plates that
-   overlap each other, text in the bottom 20% / right edge, or a 3D model that clips the frame. Impact: fewer
-   manual fixes, safer automation.
-4. **End-card call to action that varies:** "Save this for your next build" / "Which step surprised you?" /
+2. **End-card call to action that varies:** "Save this for your next build" / "Which step surprised you?" /
    a one-question quiz. Impact: saves and comments (both weigh heavily in Reels ranking).
-5. **On-screen number in the hook** (e.g. "90% OF THIS ROAD IS ROCK") where a safe, general figure exists. Impact: medium.
-6. **Use the empty top band during steps** (400-640px is often blank in wide, shallow sections): a small live
+3. **On-screen number in the hook** (e.g. "90% OF THIS ROAD IS ROCK") where a safe, general figure exists. Impact: medium.
+4. **Use the empty top band during steps** (400-640px is often blank in wide, shallow sections): a small live
    mini-map of the 3D model with the current step highlighted. Impact: medium.
-7. **Publish retry with a fresh container** for transient Instagram errors (no failures seen yet). Impact: reliability.
-8. **"Wrong vs right" / "Spot the defect" format** as a second series. Impact: shares; needs insights first.
-9. **Faster post build.** On 2026-11-19 `tools/install.sh` (apt-get) took 6 of the 11 build minutes. Cache the apt
+5. **Publish retry with a fresh container** for transient Instagram errors (no failures seen yet). Impact: reliability.
+6. **"Wrong vs right" / "Spot the defect" format** as a second series. Impact: shares; needs insights first.
+7. **Faster post build.** On 2026-11-19 `tools/install.sh` (apt-get) took 6 of the 11 build minutes. Cache the apt
    packages or skip apt when ffmpeg/cairo are already on the runner. Impact: reliability (less time for a flaky step).
-10. **Music variety:** a few bed variants (key/tempo per category) so the channel doesn't repeat one loop forever,
+8. **Music variety:** a few bed variants (key/tempo per category) so the channel doesn't repeat one loop forever,
    and a short riser into the 3D result. Impact: low-medium; wait for watch-time data to confirm the bed helps.
+9. **Run tools/check.py in CI** (preview/post workflows, warning-only at first) so a layout regression from an
+   engine change is caught even when no one renders frames. Impact: reliability.
 
 ## Tried and dropped
 

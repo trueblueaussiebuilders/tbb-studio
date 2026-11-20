@@ -142,6 +142,8 @@ def _trim(a, thresh=0.01):
 
 
 LEAD = 0.15   # voice starts this long after each scene starts
+HOOK_SENTENCE_GAP = 0.22   # the hook is read punchier than the steps: shorter breaths between its sentences ...
+HOOK_LINE_GAP = 0.3        # ... and a shorter pause before step 1 (target: hook scene under 4.5s)
 
 
 def _tempo(a, factor):
@@ -160,19 +162,20 @@ def narrate(narration):
     tempo, gap = ecfg.get("tempo", 1.0), ecfg.get("line_gap", 0.3)
     # Speak each sentence separately and leave a breath between them, so lines don't run together
     sgap = np.zeros(int(_cfg().get("sentence_gap", 0.4) * SR), dtype=np.float32)
+    hgap = np.zeros(int(min(HOOK_SENTENCE_GAP, len(sgap) / SR) * SR), dtype=np.float32)
     split = [[x for x in re.split(r"(?<=[.!?])\s+", line.strip()) if x] for line in lines]
     flat = [x for parts in split for x in parts]
     audio = iter(_trim(a) for a in synth(flat))
     joined = []
-    for parts in split:
+    for k, parts in enumerate(split):
         chunks = []
         for i, _ in enumerate(parts):
-            if i: chunks.append(sgap)
+            if i: chunks.append(hgap if k == 0 else sgap)
             chunks.append(next(audio))
         joined.append(np.concatenate(chunks))
     clips = dict(zip(keys, [_tempo(a, tempo) for a in joined]))
     L = lambda a: len(a) / SR
-    tim = {"hook": round(max(2.8, LEAD + L(clips["hook"]) + gap), 2),
+    tim = {"hook": round(max(2.8, LEAD + L(clips["hook"]) + min(gap, HOOK_LINE_GAP)), 2),
            "steps": [round(max(3.0, LEAD + L(clips[f"step{i}"]) + gap), 2) for i in range(len(narration["steps"]))],
            "result": round(max(3.2, LEAD + L(clips["result"]) + 0.9), 2),
            "end": round(max(2.8, LEAD + L(clips["end"]) + 0.8), 2)}
