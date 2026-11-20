@@ -36,6 +36,8 @@ videos/002-tilt-up-panel/spec.py    # META (on-screen text), NARRATION (voice li
 ```
 Optional: `model3d()` (3D model for the hook, result and cover) and `META["xray"] = {"after_step": 4, "upto": 12, "hot": [5, 6]}`
 (a 3D "built so far" interlude at the end of that step; see IMPROVEMENTS.md).
+Every video gets a synthesised music bed ducked under the voice plus light sound effects (`engine/audio.py`);
+turn them off per video with `META["music"] = False` / `META["sfx"] = False`.
 Then add `002-tilt-up-panel` to `queue.txt`. Shared look, panels, timing and end card live in `engine/blueprint.py`.
 
 Local build (no keys needed, uses the free Kokoro voice):

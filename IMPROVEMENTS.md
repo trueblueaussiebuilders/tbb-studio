@@ -14,7 +14,34 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
   portal frame 30, 004 timber wall frame 21 (posted a day later than most, so still climbing), 003 and 005 9 each.
   Structural/framing "skeleton" topics lead on likes; keep alternating them in. Not enough data to judge hooks.
 
+- 2026-11-20: still likes only (insights permission not enabled yet). 008 steel portal frame 30, 004 timber wall
+  frame 21, 003 brick veneer 9, 005 Super-T bridge 9, 009 suspended slab 6, 006 load-bearing wall 3 (+1 comment),
+  011 re-stumping 3 (1 day old), 001/002/007/010 0. Pattern holding over 10 posts: framing/structural "skeleton"
+  topics (008, 004, 003) get the most likes; civil/earthworks (007, 010) the least. Keep structure-reveal topics
+  and "what's hidden inside" hooks coming; give civil videos a stronger surprise hook.
+
 ## Changelog
+
+### 2026-11-20: Music bed + sound effects
+- **What:** new `engine/audio.py`, called from `engine/build.py` right after the voiceover. Every video now gets a
+  numpy-synthesised music bed (soft pad chords vi-IV-I-V at 96 BPM, a quiet plucked arpeggio from 0.2s, and a soft
+  kick on every beat once step 1 starts), ducked under the voice (about 19-20 dB below the voice while it speaks,
+  about 14 dB below in the pauses) and faded out over the end card. Plus light effects on what changes on screen:
+  a low thump when the orange hook punchline pops in, a soft whoosh peaking on each step cut and on the result,
+  a rising shimmer when the 3D x-ray opens, and a two-note chime on "Follow for more". No samples, so no licensing
+  risk, and it's deterministic. Opt out per spec with `META["music"] = False` / `META["sfx"] = False`.
+- **Why:** videos were voice-only with dead silence between sentences. A bed adds energy and continuity, and sound
+  on reveals reinforces the pattern interrupts. Backlog #2.
+- **Checked:** full build of 012: duration 72.2s (matches the timeline, no drift), peak -1.2 dBFS, no clipping,
+  -16 LUFS integrated (same as voice-only); waveform before/after shows the gaps filled at a low level with the
+  voice still dominant. Older specs (001, 006, 011) mix fine. Visuals unchanged.
+- **First video:** 012-road-pavement (posts 2026-11-20) and every video after it. No spec changes needed.
+- **Tune later:** levels are `BED_DB_OPEN` / `BED_DB_DUCK` / `SFX_DB` at the top of engine/audio.py. Once watch-time
+  data exists, compare average watch time before/after 012.
+- **Files:** engine/audio.py (new), engine/build.py.
+
+### 2026-11-20 (content): "glass" 3D material
+- `kind="glass"` parts get a lighter blue fill in engine/three_d.py. First used by 014-curtain-wall.
 
 ### 2026-11-19: Mid-video 3D "x-ray" interlude
 - **What:** new optional spec field `META["xray"] = {"after_step": k, "upto": N, "hot": [orders], "scale": 1.0}`.
@@ -59,21 +86,23 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
    API says `(#10) Application does not have permission`. Add `instagram_manage_insights` to the Meta app, generate a
    new Page token for the account with it ticked, and update the IG_ACCESS_TOKEN secret. Impact: unlocks every
    data-driven decision below.
-2. **Music bed ducked under the voice + soft "tick" on each label reveal.** Videos are voice-only. A quiet,
-   royalty-free generated bed (synthesised in numpy, no licensing risk) adds energy and retention. Impact: high.
-3. **Shorter hook narration (target under 4.5s).** The hook scene runs as long as its voice line: 6.3s on 011,
-   7.2s on 012 and 7.3s on 013, so step 1 doesn't start until ~7s. Trim the hook line to the punchline plus
+2. **Shorter hook narration (target under 4.5s).** The hook scene runs as long as its voice line: 6.3s on 011,
+   7.2s on 012 and 7.3s on 013 (014 was written short: 5.5s), so step 1 doesn't start until ~7s. Trim the hook line to the punchline plus
    "Here's how", and/or start the step-1 drawing under the end of the hook. Impact: high on 3s hold rate.
-4. **Auto layout check (`tools/check.py`).** Render frames at every label's full-on time and flag label plates that
+3. **Auto layout check (`tools/check.py`).** Render frames at every label's full-on time and flag label plates that
    overlap each other, text in the bottom 20% / right edge, or a 3D model that clips the frame. Impact: fewer
    manual fixes, safer automation.
-5. **End-card call to action that varies:** "Save this for your next build" / "Which step surprised you?" /
+4. **End-card call to action that varies:** "Save this for your next build" / "Which step surprised you?" /
    a one-question quiz. Impact: saves and comments (both weigh heavily in Reels ranking).
-6. **On-screen number in the hook** (e.g. "90% OF THIS ROAD IS ROCK") where a safe, general figure exists. Impact: medium.
-7. **Use the empty top band during steps** (400-640px is often blank in wide, shallow sections): a small live
+5. **On-screen number in the hook** (e.g. "90% OF THIS ROAD IS ROCK") where a safe, general figure exists. Impact: medium.
+6. **Use the empty top band during steps** (400-640px is often blank in wide, shallow sections): a small live
    mini-map of the 3D model with the current step highlighted. Impact: medium.
-8. **Publish retry with a fresh container** for transient Instagram errors (no failures seen yet). Impact: reliability.
-9. **"Wrong vs right" / "Spot the defect" format** as a second series. Impact: shares; needs insights first.
+7. **Publish retry with a fresh container** for transient Instagram errors (no failures seen yet). Impact: reliability.
+8. **"Wrong vs right" / "Spot the defect" format** as a second series. Impact: shares; needs insights first.
+9. **Faster post build.** On 2026-11-19 `tools/install.sh` (apt-get) took 6 of the 11 build minutes. Cache the apt
+   packages or skip apt when ffmpeg/cairo are already on the runner. Impact: reliability (less time for a flaky step).
+10. **Music variety:** a few bed variants (key/tempo per category) so the channel doesn't repeat one loop forever,
+   and a short riser into the 3D result. Impact: low-medium; wait for watch-time data to confirm the bed helps.
 
 ## Tried and dropped
 

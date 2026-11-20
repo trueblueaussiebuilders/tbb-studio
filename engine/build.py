@@ -7,6 +7,7 @@ import argparse, importlib.util, json, multiprocessing as mp, os, subprocess, sy
 import numpy as np, soundfile as sf
 from engine import blueprint as bp
 from engine import voice
+from engine import audio
 
 SPEC = TL = None
 
@@ -66,6 +67,7 @@ def main():
 
     print(f"[{slug}] voice: {voice.engine_name()}")
     tim, track = voice.narrate(SPEC.NARRATION)
+    track = audio.mix(track, voice.SR, tim, SPEC)      # music bed ducked under the voice + sound effects
     json.dump(tim, open(tim_path, "w"))
     TL = bp.Timeline(tim)
     print(f"[{slug}] duration {TL.duration:.1f}s, {len(TL.scenes)} scenes")
