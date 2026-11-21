@@ -34,7 +34,8 @@ Automated blueprint-style construction Reels for [@trueblueaussiebuilders](https
 ```
 videos/002-tilt-up-panel/spec.py    # META (on-screen text), NARRATION (voice lines), CAPTION, draw_section()
 ```
-Optional: `model3d()` (3D model for the hook, result and cover) and `META["xray"] = {"after_step": 4, "upto": 12, "hot": [5, 6]}`
+Optional: `model3d()` (3D model for the hook, result and cover; the hook starts it half built, change with
+`META["hook_start"] = 0.3` etc.) and `META["xray"] = {"after_step": 4, "upto": 12, "hot": [5, 6]}`
 (a 3D "built so far" interlude at the end of that step; see IMPROVEMENTS.md).
 Every video gets a synthesised music bed ducked under the voice plus light sound effects (`engine/audio.py`);
 turn them off per video with `META["music"] = False` / `META["sfx"] = False`.

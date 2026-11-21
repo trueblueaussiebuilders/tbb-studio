@@ -295,7 +295,11 @@ def draw_frame(spec, tl, t):
             parts, cfg = m3
             n = max(p.order for p in parts) + 1
             span = max(tl.hook - 1.0, 1.5)
-            appear = lambda part: 1.0 if part.order == 0 else clamp((t + 0.1 - span * part.order / n) / 0.45)
+            # Part-built first frame: frame 0 already shows the first `hook_start` of the build (default half),
+            # so the autoplay frame is a recognisable structure, not an empty slab. The rest drops in over the hook.
+            f0 = clamp(M.get("hook_start", 0.5), 0.0, 0.95)
+            tb = f0 * span + (1 - f0) * t + 0.1
+            appear = lambda part: 1.0 if part.order == 0 else clamp((tb - span * part.order / n) / 0.45)
             yaw = cfg["yaw"] + 14 * (t / max(tl.hook, 1))
             _draw3d(ctx, spec, cfg.get("cy_hook", 1010), yaw, alpha=a, appear=appear)
 

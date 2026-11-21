@@ -20,7 +20,40 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
   topics (008, 004, 003) get the most likes; civil/earthworks (007, 010) the least. Keep structure-reveal topics
   and "what's hidden inside" hooks coming; give civil videos a stronger surprise hook.
 
+- 2026-11-21: still likes only (insights permission not enabled). 008 steel portal frame 30, 004 timber wall frame 21,
+  012 road pavement 19 after less than a day (best first day so far, and a civil topic, the category that had done
+  worst; it was the first video with the music bed and the shorter hook, but one video can't prove that), 003 and 005
+  9, 009 6, 011 4, 006 3, 010 1. Pattern still: structure/"skeleton" reveals lead; a strong surprise hook ("the black
+  stuff is the thin bit") can lift a civil topic. Next residential pick follows that: 015 roof trusses.
+
 ## Changelog
+
+### 2026-11-21: Part-built first frame (the hook's 3D model starts half built)
+- **What:** in the hook, the 3D model now starts with the first half of its build order already in place at t=0
+  (it used to be an empty ground slab), and the rest still drops in over the hook, finishing a bit earlier.
+  Optional spec field `META["hook_start"]` (0..0.95, default 0.5) sets how much is built on frame 0.
+- **Why:** Reels autoplay and the feed start on frame 0. In every 3D video that frame showed a bare blue plane under
+  the first hook line, which says nothing. Now frame 0 is a recognisable structure: a house frame with trusses going
+  on (015), a column grid with the tendon deck (013), floors with the first curtain wall row (014), portal frames (008).
+- **Checked:** before/after frame 0 and 1s for 008, 013, 014, 015; tools/check.py --queue clean (013, 014, 015);
+  full local build of 013 (duration and audio unchanged). Older specs need no change.
+- **First video:** 013-post-tensioned-slab (posts 2026-11-21) and every video after it.
+- **Files:** engine/blueprint.py (hook block in draw_frame).
+
+### 2026-11-21: Faster, time-limited install step (post run 17.5 min -> about 7)
+- **What:** tools/install.sh skips system packages already on the runner, never pulls apt Recommends, tries the
+  runner's existing package lists before `apt-get update` (only runs it if the install fails), and puts a time limit
+  on each apt call with one clean retry. Prints how long each part took.
+- **Why:** the Install step had grown from 38s (11-18) to 6 min (11-19) to 12 min (11-20), almost all of it apt, which
+  made the post itself late and left a stalled mirror able to hang the job. Backlog #7.
+- **Checked:** dry run of post.yml (run 44848047335): only ffmpeg and libcairo2-dev were missing, installed from the
+  existing lists in 16s, whole Install step 32s, build/host/publish green.
+- **Files:** tools/install.sh (also used by preview.yml and voice-test.yml).
+
+### 2026-11-21 (content): roof-plan inset + detail bubble
+- 015-roof-trusses fills the empty top band with a small "ROOF PLAN" inset that builds along with the steps (trusses
+  one by one, straps, battens, sheets) plus a magnified detail bubble for the tie-down. Both are spec-local for now;
+  see Backlog #3 to move them into the engine.
 
 ### 2026-11-20: Automatic layout check (`tools/check.py`)
 - **What:** `python tools/check.py --queue` (or video folders) renders every 0.25s of each video plus the cover with
@@ -114,19 +147,24 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
    API says `(#10) Application does not have permission`. Add `instagram_manage_insights` to the Meta app, generate a
    new Page token for the account with it ticked, and update the IG_ACCESS_TOKEN secret. Impact: unlocks every
    data-driven decision below.
-2. **End-card call to action that varies:** "Save this for your next build" / "Which step surprised you?" /
-   a one-question quiz. Impact: saves and comments (both weigh heavily in Reels ranking).
-3. **On-screen number in the hook** (e.g. "90% OF THIS ROAD IS ROCK") where a safe, general figure exists. Impact: medium.
-4. **Use the empty top band during steps** (400-640px is often blank in wide, shallow sections): a small live
-   mini-map of the 3D model with the current step highlighted. Impact: medium.
-5. **Publish retry with a fresh container** for transient Instagram errors (no failures seen yet). Impact: reliability.
-6. **"Wrong vs right" / "Spot the defect" format** as a second series. Impact: shares; needs insights first.
-7. **Faster post build.** On 2026-11-19 `tools/install.sh` (apt-get) took 6 of the 11 build minutes. Cache the apt
-   packages or skip apt when ffmpeg/cairo are already on the runner. Impact: reliability (less time for a flaky step).
+2. **Bigger, shared leader labels.** Labels are 24px (about 9pt on a phone) and every spec copies its own `label()`.
+   Move one into engine/blueprint.py at ~28-30px with a phone-safe plate, switch the queued specs to it, and let
+   tools/check.py catch the new overlaps. Impact: readability on phones, less copy-paste in specs.
+3. **Use the empty top band in every video:** turn 015's roof-plan inset and detail bubble into engine helpers
+   (`inset()`, `detail_bubble()`), or a small live 3D mini-map with the current step highlighted. Impact: medium,
+   more to look at during the 2D steps.
+4. **On-screen number in the hook** (e.g. "90% OF THIS ROAD IS ROCK") where a safe, general figure exists. Impact: medium.
+5. **Save / comment prompt.** End-card versions ("Save this for your next build", "Which step surprised you?") need
+   Mathew's OK first: the current content rule is that the end card says only "Follow for more". Meanwhile a question
+   as the caption's first line can test the same idea. Impact: saves and comments (weigh heavily in Reels ranking).
+6. **Publish retry with a fresh container** for transient Instagram errors (no failures seen yet). Impact: reliability.
+7. **"Wrong vs right" / "Spot the defect" format** as a second series. Impact: shares; needs insights first.
 8. **Music variety:** a few bed variants (key/tempo per category) so the channel doesn't repeat one loop forever,
    and a short riser into the 3D result. Impact: low-medium; wait for watch-time data to confirm the bed helps.
 9. **Run tools/check.py in CI** (preview/post workflows, warning-only at first) so a layout regression from an
    engine change is caught even when no one renders frames. Impact: reliability.
+10. **Cache pip wheels in post.yml** (`setup-python` `cache: pip`): pycairo builds from source each run (~10s).
+    Impact: low.
 
 ## Tried and dropped
 
