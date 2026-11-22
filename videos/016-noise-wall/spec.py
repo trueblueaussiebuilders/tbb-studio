@@ -67,23 +67,6 @@ PILE_CONC = [concrete_points(160 + i, x - PH + 4, GL + 4, x + PH - 4, PILE_B - 4
 ROW_CONC = [concrete_points(170 + j, BAYS[0][0], y0, WALL_R, y1, 26) for j, (y0, y1) in enumerate([PLINTH] + ROWS)]
 
 
-def label(ctx, p, col, tip, elbow, txt, anchor="l", a=1.0):
-    """Leader + typed label on a dark plate (so linework never strikes through), with an overall fade `a`."""
-    if p <= 0 or a <= 0: return
-    if a < 1: ctx.push_group()
-    polyline(ctx, [tip, elbow], clamp(p * 2), col, 2)
-    dot(ctx, tip[0], tip[1], 5, col, clamp(p * 4))
-    n = int(len(txt) * clamp(p * 2 - 1))
-    if n > 0:
-        font(ctx, 24, True)
-        w = ctx.text_extents(txt[:n]).x_advance
-        x = elbow[0] + 10 if anchor == "l" else elbow[0] - 10 - w
-        ctx.set_source_rgba(*BG, 0.92); ctx.rectangle(x - 6, elbow[1] - 14, w + 12, 28); ctx.fill()
-        text(ctx, txt, x, elbow[1] + 8, 24, col, bold=True, chars=n)
-    if a < 1: ctx.pop_group_to_source(); ctx.paint_with_alpha(a)
-
-
-def gone(t, t0, d=0.5): return 1 - clamp((t - t0) / d)
 
 
 def fill_poly(ctx, pts, col, alpha):
@@ -216,7 +199,7 @@ def draw_section(ctx, t, tl):
     label(ctx, clamp((t - s4 - 0.6) / 0.8), c4, (PX[0] - PW, 700), (110, 700), "STEEL POST", a=gone(t, s6))
     label(ctx, clamp((t - s4 - 1.2) / 0.8), BLUE, (PX[0] + 34, 620), (940, 482), "SET PLUMB + ON LINE", anchor="r",
           a=gone(t, s5))
-    label(ctx, clamp((t - pour_t - 0.5) / 0.8), c4, (PX[0] - PH, 1100), (110, 1060), "CONCRETE PILE", a=gone(t, s6))
+    label(ctx, clamp((t - pour_t - 0.5) / 0.8), c4, (PX[0] - PH, 1100), (110, 1060), "CONCRETE", a=gone(t, s6))
 
     # ---- 5 plinth panels at ground level
     c5 = tl.col(5, t)

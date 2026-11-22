@@ -80,23 +80,6 @@ def chord_y(x):
     return HY - (min(x, 2 * APEX[0] - x) - XL) * K
 
 
-def label(ctx, p, col, tip, elbow, txt, anchor="l", a=1.0):
-    """Leader + typed label on a dark plate (so linework never strikes through), with an overall fade `a`."""
-    if p <= 0 or a <= 0: return
-    if a < 1: ctx.push_group()
-    polyline(ctx, [tip, elbow], clamp(p * 2), col, 2)
-    dot(ctx, tip[0], tip[1], 5, col, clamp(p * 4))
-    n = int(len(txt) * clamp(p * 2 - 1))
-    if n > 0:
-        font(ctx, 24, True)
-        w = ctx.text_extents(txt[:n]).x_advance
-        x = elbow[0] + 10 if anchor == "l" else elbow[0] - 10 - w
-        ctx.set_source_rgba(*BG, 0.92); ctx.rectangle(x - 6, elbow[1] - 14, w + 12, 28); ctx.fill()
-        text(ctx, txt, x, elbow[1] + 8, 24, col, bold=True, chars=n)
-    if a < 1: ctx.pop_group_to_source(); ctx.paint_with_alpha(a)
-
-
-def gone(t, t0, d=0.5): return 1 - clamp((t - t0) / d)
 
 
 def fill_poly(ctx, pts, col, alpha):

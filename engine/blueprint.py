@@ -128,6 +128,35 @@ def leader(ctx, p, col, tip, elbow, label, size=24, anchor="l"):
     text(ctx, label, elbow[0] + dx, elbow[1] + 8, size, col, bold=True, anchor=anchor, chars=n)
 
 
+LABEL_SIZE = 28      # leader labels: 28px bold (was 24px, about 9pt on a phone); plates scale with it
+
+
+def label(ctx, p, col, tip, elbow, txt, anchor="l", a=1.0, size=None):
+    """Shared leader label: leader from `tip` to `elbow`, then the text types on beside the elbow on a dark
+    plate (so linework never strikes through it). p = 0..1 draw-on progress, a = overall fade (0..1),
+    anchor "l" puts the text right of the elbow, "r" left of it. Specs used to copy their own 24px version;
+    new specs should use this one (older specs that define their own keep working unchanged)."""
+    if p <= 0 or a <= 0: return
+    size = size or LABEL_SIZE
+    if a < 1: ctx.push_group()
+    polyline(ctx, [tip, elbow], clamp(p * 2), col, 2)
+    dot(ctx, tip[0], tip[1], 5, col, clamp(p * 4))
+    n = int(len(txt) * clamp(p * 2 - 1))
+    if n > 0:
+        font(ctx, size, True)
+        w = ctx.text_extents(txt[:n]).x_advance
+        x = elbow[0] + 10 if anchor == "l" else elbow[0] - 10 - w
+        ph = round(size * 1.2)
+        ctx.set_source_rgba(*BG, 0.92); ctx.rectangle(x - 6, elbow[1] - ph / 2, w + 12, ph); ctx.fill()
+        text(ctx, txt, x, elbow[1] + round(size * 0.36), size, col, bold=True, chars=n)
+    if a < 1: ctx.pop_group_to_source(); ctx.paint_with_alpha(a)
+
+
+def gone(t, t0, d=0.5):
+    """1 until t0, then fades to 0 over d seconds (for labels that are no longer relevant)."""
+    return 1 - clamp((t - t0) / d)
+
+
 def dim_v(ctx, x, y1, y2, label, p, col=BLUE):
     polyline(ctx, [(x, y1), (x, y2)], p, col, 2)
     for y in (y1, y2):

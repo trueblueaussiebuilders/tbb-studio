@@ -26,7 +26,33 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
   9, 009 6, 011 4, 006 3, 010 1. Pattern still: structure/"skeleton" reveals lead; a strong surprise hook ("the black
   stuff is the thin bit") can lift a civil topic. Next residential pick follows that: 015 roof trusses.
 
+- 2026-11-22: still likes only (insights permission not enabled). 012 road pavement 24, 008 steel portal frame 30,
+  004 timber wall frame 21, 013 post-tensioned slab 15 after half a day (second-best first day), 003 and 005 9,
+  009 6, 011 4, 006 3, 010 1, 001/002/007 0. The two newest posts, with the music bed, short hook and instant hook
+  (012, 013) are the two best first days on the channel; older videos took days to reach that. Could also be
+  account growth, so keep comparing once views exist. Structure reveals + one clear surprise claim keep working,
+  so 016 noise wall leads on "hidden piles".
+
 ## Changelog
+
+### 2026-11-22: Bigger shared leader labels (24px -> 28px, one engine helper)
+- **What:** new `label()` (and `gone()`) in engine/blueprint.py: the leader + typed label on a dark plate that every
+  spec since 007 copied locally, now at `LABEL_SIZE = 28` (was 24) with the plate scaling to match. Optional
+  `size=` per label. The queued specs (014, 015, 016) dropped their local copies and use it; 001-013 keep their
+  own 24px version and build unchanged.
+- **Why:** on a phone (1080px video shown ~390pt wide) the 24px labels were about 9pt, the smallest key text on
+  screen, and they carry most of what each drawing means. Backlog #2.
+- **Checked:** tools/check.py --queue clean after one fix (016 "CONCRETE PILE" grew into the pile, now "CONCRETE");
+  before/after phone-size frames of 014, 015, 016 (labels clearly easier to read, no new overlaps); old specs
+  001, 006, 011, 013 still build; full build of 014 (next to post).
+- **Rule for new specs:** don't define `label()` in the spec; use the engine one. Left-anchored labels at x=110
+  now take about 17px per character, so keep them short where the drawing starts near x=300.
+- **First video:** 014-curtain-wall (posts 2026-11-22).
+- **Files:** engine/blueprint.py, videos/014, 015, 016 specs.
+
+### 2026-11-22 (content): x-ray ground + "precast" 3D material
+- 016-noise-wall draws the ground as a thin plate with the piles hanging below it, so the hidden part is the hero
+  of the 3D shots. New `kind="precast"` (lighter fill) in engine/three_d.py makes wall panels read as solid.
 
 ### 2026-11-21: Part-built first frame (the hook's 3D model starts half built)
 - **What:** in the hook, the 3D model now starts with the first half of its build order already in place at t=0
@@ -147,24 +173,25 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
    API says `(#10) Application does not have permission`. Add `instagram_manage_insights` to the Meta app, generate a
    new Page token for the account with it ticked, and update the IG_ACCESS_TOKEN secret. Impact: unlocks every
    data-driven decision below.
-2. **Bigger, shared leader labels.** Labels are 24px (about 9pt on a phone) and every spec copies its own `label()`.
-   Move one into engine/blueprint.py at ~28-30px with a phone-safe plate, switch the queued specs to it, and let
-   tools/check.py catch the new overlaps. Impact: readability on phones, less copy-paste in specs.
-3. **Use the empty top band in every video:** turn 015's roof-plan inset and detail bubble into engine helpers
+2. **Use the empty top band in every video:** turn 015's roof-plan inset and detail bubble into engine helpers
    (`inset()`, `detail_bubble()`), or a small live 3D mini-map with the current step highlighted. Impact: medium,
    more to look at during the 2D steps.
-4. **On-screen number in the hook** (e.g. "90% OF THIS ROAD IS ROCK") where a safe, general figure exists. Impact: medium.
-5. **Save / comment prompt.** End-card versions ("Save this for your next build", "Which step surprised you?") need
+3. **On-screen number in the hook** (e.g. "90% OF THIS ROAD IS ROCK") where a safe, general figure exists. Impact: medium.
+4. **Save / comment prompt.** End-card versions ("Save this for your next build", "Which step surprised you?") need
    Mathew's OK first: the current content rule is that the end card says only "Follow for more". Meanwhile a question
    as the caption's first line can test the same idea. Impact: saves and comments (weigh heavily in Reels ranking).
-6. **Publish retry with a fresh container** for transient Instagram errors (no failures seen yet). Impact: reliability.
-7. **"Wrong vs right" / "Spot the defect" format** as a second series. Impact: shares; needs insights first.
-8. **Music variety:** a few bed variants (key/tempo per category) so the channel doesn't repeat one loop forever,
+5. **Publish retry with a fresh container** for transient Instagram errors (no failures seen yet). Impact: reliability.
+6. **"Wrong vs right" / "Spot the defect" format** as a second series. Impact: shares; needs insights first.
+7. **Music variety:** a few bed variants (key/tempo per category) so the channel doesn't repeat one loop forever,
    and a short riser into the 3D result. Impact: low-medium; wait for watch-time data to confirm the bed helps.
-9. **Run tools/check.py in CI** (preview/post workflows, warning-only at first) so a layout regression from an
+8. **Run tools/check.py in CI** (preview/post workflows, warning-only at first) so a layout regression from an
    engine change is caught even when no one renders frames. Impact: reliability.
-10. **Cache pip wheels in post.yml** (`setup-python` `cache: pip`): pycairo builds from source each run (~10s).
+9. **Cache pip wheels in post.yml** (`setup-python` `cache: pip`): pycairo builds from source each run (~10s).
     Impact: low.
+10. **Step body text a touch bigger / one line shorter.** Bodies are 32px and often wrap to 3 lines; 34-36px with
+    tighter wording would read faster on a phone. Impact: low-medium.
+11. **Shared `arrow()` / `fill_poly()` helpers** in the engine (every recent spec copies them, like `label()` was).
+    Impact: low (less copy-paste, fewer spec bugs).
 
 ## Tried and dropped
 

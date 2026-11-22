@@ -44,6 +44,8 @@ so the hook scene stays under 4.5s. Check the layout automatically before commit
 ```
 python tools/check.py videos/002-tilt-up-panel      # or --queue for everything not yet posted; --out DIR saves problem frames
 ```
+Leader labels: call the engine's `label(ctx, p, col, tip, elbow, txt, anchor, a)` (28px on a dark plate) rather than
+copying one into the spec; `gone(t, t0)` fades a label out once it's no longer relevant.
 Then add `002-tilt-up-panel` to `queue.txt`. Shared look, panels, timing and end card live in `engine/blueprint.py`.
 
 Local build (no keys needed, uses the free Kokoro voice):
