@@ -150,7 +150,7 @@ def inset(ctx, t, tl, a):
     pf = prog(t, s2 + 0.2, 0.4)
     if pf > 0:
         ctx.set_source_rgba(*tl.col(2, t), pf); ctx.set_line_width(2.5)
-        ctx.arc(*PW, 13, 0, 2 * math.pi); ctx.stroke(); dot(ctx, *PW, 5, tl.col(2, t), pf)
+        ctx.new_path(); ctx.arc(*PW, 13, 0, 2 * math.pi); ctx.stroke(); dot(ctx, *PW, 5, tl.col(2, t), pf)
     # falls (step 3): arrows from the edges of the shower into the waste, and across the floor
     c3 = tl.col(3, t)
     for i, (x0, y0) in enumerate(((SHW[0] + 18, SHW[1] + 18), (SHW[2] - 14, SHW[1] + 16), (SHW[0] + 16, SHW[3] - 14),
@@ -272,7 +272,7 @@ def draw_section(ctx, t, tl):
                 k = (target - acc) / L if L else 0
                 x = path[i][0] + (path[i + 1][0] - path[i][0]) * k; y = path[i][1] + (path[i + 1][1] - path[i][1]) * k
                 ctx.set_source_rgba(*ORANGE, 0.95); ctx.set_line_width(3)
-                ctx.arc(x, y, 26, 0, 2 * math.pi); ctx.stroke()
+                ctx.new_path(); ctx.arc(x, y, 26, 0, 2 * math.pi); ctx.stroke()
                 break
             acc += L
     ks = gone(t, s8, 0.4)
