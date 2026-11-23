@@ -19,7 +19,11 @@ SERIES = "TRUE BLUE AUSSIE BUILDERS"
 
 # Layout bands (keep key info out of the bottom ~20% and the right edge: Reels UI)
 DRAW_TOP, DRAW_BOTTOM = 400, 1210   # section drawing area
-PANEL_Y = 1305
+PANEL_Y = 1298                      # step panel: number, title, then body text (was 1305)
+BODY_SIZE, BODY_GAP = 36, 50        # step body text px / line pitch (was 32 / 46: about 11.5pt on a phone, now 13pt)
+DRIFT = 0.045                       # slow camera on the 2D section: zooms in over odd steps, back out over even ones
+DRIFT_FOCUS = (540, (DRAW_TOP + DRAW_BOTTOM) / 2)
+DRIFT_CLIP = (54, 395, 1026, 1234)  # zoomed drawing stays inside the frame border, under the section label, above the ticks
 
 
 # ---------------------------------------------------------------- maths
@@ -262,6 +266,34 @@ def _draw3d(ctx, spec, cy, yaw, alpha=1.0, appear=None, pitch=None, scale_mul=1.
     td.render(ctx, parts, cam, alpha=alpha, appear=appear, highlight=highlight, ghost=ghost)
 
 
+def section_zoom(spec, tl, t):
+    """Scale for the 2D section at time t: a slow push-in over odd steps and pull-back over even ones, so the
+    drawing is always gently moving (no jump at the cuts: each step starts where the last one ended).
+    Opt out or tune per spec with META["drift"] = 0 / 0.03. Back to 1.0 by the result."""
+    amt = spec.META.get("drift", DRIFT)
+    if not amt or t < tl.s(1) or t >= tl.res0: return 1.0
+    i = 1
+    while i < tl.n and t >= tl.step_end(i): i += 1
+    u = ease((t - tl.step_start(i)) / max(tl.tim["steps"][i - 1], 0.1))
+    z = u if i % 2 else 1 - u
+    if i == tl.n and i % 2: z = 1 - u if u > 0.5 else u           # odd step count: come back by the result
+    return 1 + amt * z
+
+
+def _section(ctx, spec, tl, t):
+    """spec.draw_section with the slow camera drift applied."""
+    z = section_zoom(spec, tl, t)
+    if z == 1.0:
+        spec.draw_section(ctx, t, tl); return
+    fx, fy = DRIFT_FOCUS
+    ctx.save()
+    x0, y0, x1, y1 = DRIFT_CLIP
+    ctx.rectangle(x0, y0, x1 - x0, y1 - y0); ctx.clip()
+    ctx.translate(fx, fy); ctx.scale(z, z); ctx.translate(-fx, -fy)
+    spec.draw_section(ctx, t, tl)
+    ctx.restore()
+
+
 def xray_window(spec, tl):
     """Mid-video 3D "x-ray" interlude (opt-in via META["xray"]).
 
@@ -343,9 +375,9 @@ def draw_frame(spec, tl, t):
     k3 = max(k3, kx)
     if k3 < 1:
         if k3 > 0:
-            ctx.push_group(); spec.draw_section(ctx, t, tl); ctx.pop_group_to_source(); ctx.paint_with_alpha(1 - k3)
+            ctx.push_group(); _section(ctx, spec, tl, t); ctx.pop_group_to_source(); ctx.paint_with_alpha(1 - k3)
         else:
-            spec.draw_section(ctx, t, tl)
+            _section(ctx, spec, tl, t)
     if kx > 0:
         # x-ray interlude: the 3D model so far, current work in orange, the rest as faint ghosts, orbiting
         cfg, xc = m3[1], M["xray"]
@@ -365,10 +397,10 @@ def draw_frame(spec, tl, t):
         if not (t0 <= t < t1 + 0.01): return
         a = clamp((t - t0) / 0.25) * (1 if last else 1 - clamp((t - t1 + 0.2) / 0.2))
         if num_txt: text(ctx, num_txt, 90, PANEL_Y, 28, YEL, alpha=a, bold=True, spacing=4)
-        text(ctx, title, 88, PANEL_Y + 68, 54, WHITE, alpha=a, bold=True)
-        for i, ln in enumerate(wrap(ctx, body, 32, 880)):
+        text(ctx, title, 88, PANEL_Y + 64, 54, WHITE, alpha=a, bold=True)
+        for i, ln in enumerate(wrap(ctx, body, BODY_SIZE, 890)):
             k = clamp((t - t0 - 0.2 - i * 0.15) / 0.3)
-            text(ctx, ln, 90, PANEL_Y + 128 + i * 46, 32, WHITE, alpha=a * k * 0.9)
+            text(ctx, ln, 90, PANEL_Y + 116 + i * BODY_GAP, BODY_SIZE, WHITE, alpha=a * k * 0.92)
 
     for i, (ttl, body) in enumerate(M["steps"], 1):
         panel(f"STEP {i:02d} / {tl.n:02d}", ttl, body, tl.step_start(i), tl.step_end(i))

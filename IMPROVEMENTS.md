@@ -33,7 +33,37 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
   account growth, so keep comparing once views exist. Structure reveals + one clear surprise claim keep working,
   so 016 noise wall leads on "hidden piles".
 
+- 2026-11-23: still likes only (insights permission not enabled). 008 steel portal frame 30, 013 post-tensioned slab
+  29 (in 1.5 days), 012 road pavement 24, 004 timber wall frame 23, 014 curtain wall 23 (under a day), 003 10,
+  005 9, 009 6, 011 4, 006 3, 010 1, 001/002/007 0. The four newest posts (012-014, every one with the music bed,
+  short and instant hook, part-built first frame) are all in the top five and reached 20+ likes within a day, which
+  no video before 012 did. Pattern across 3 videos now, not one: keep the current hook format. 013 also got the
+  most comments (2). Commercial (014) did well with a "holds nothing up" surprise claim, so the claim matters more
+  than the category. 017 shower waterproofing follows it: "the tiles aren't the waterproofing".
+
 ## Changelog
+
+### 2026-11-23: Slow camera drift on the drawing + bigger step text
+- **What:** (1) the 2D section now drifts all through the steps: a slow push-in (to 4.5%) over each odd step and a
+  pull-back over each even one, centred on the drawing area, back to 1.0 by the result. It's continuous (each step
+  starts at the zoom the last one ended on), so there's no jump at the cuts, and the zoomed drawing is clipped inside
+  the frame border, under the section label and above the progress ticks. `section_zoom()` / `_section()` in
+  engine/blueprint.py; opt out or tune per spec with `META["drift"] = 0` (or e.g. 0.03).
+  (2) step body text 32px -> 36px (about 11.5pt -> 13pt on a phone), line pitch 46 -> 50, wrap width 880 -> 890;
+  the panel moves up 7px and the title/body gap tightens so three lines still end above the bottom 20%.
+- **Why:** review of 015-017 as a phone viewer: between the line-draw animations the drawing sat perfectly still for
+  2-4s at a time; a slow push/pull keeps something moving on every frame (a standard retention trick). The body text
+  was the smallest text on screen apart from the footnote (Backlog #10).
+- **Checked:** tools/check.py --queue clean (015, 016, 017) with the new engine; before/after frames of 015, 016,
+  017 at max zoom and at step text (drawing visibly larger by the end of odd steps, hatch edges clipped cleanly at the
+  border, body text clearly bigger, no new overlaps or text in the bottom 20%); old specs 001, 011, 013 still build;
+  full local builds of 015 (next to post) and 017 with the voice.
+- **First video:** 015-roof-trusses (posts 2026-11-23) and every video after it. No spec changes needed.
+- **Files:** engine/blueprint.py.
+
+### 2026-11-23 (content): "membrane" 3D material
+- `kind="membrane"` (strong blue fill) in engine/three_d.py, so a waterproofing membrane reads at a glance.
+  First used by 017-shower-waterproofing, which also has a plan inset (falls, waterstop, membrane, tiles) like 015.
 
 ### 2026-11-22: Bigger shared leader labels (24px -> 28px, one engine helper)
 - **What:** new `label()` (and `gone()`) in engine/blueprint.py: the leader + typed label on a dark plate that every
@@ -188,10 +218,13 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
    engine change is caught even when no one renders frames. Impact: reliability.
 9. **Cache pip wheels in post.yml** (`setup-python` `cache: pip`): pycairo builds from source each run (~10s).
     Impact: low.
-10. **Step body text a touch bigger / one line shorter.** Bodies are 32px and often wrap to 3 lines; 34-36px with
-    tighter wording would read faster on a phone. Impact: low-medium.
-11. **Shared `arrow()` / `fill_poly()` helpers** in the engine (every recent spec copies them, like `label()` was).
+10. **Shared `arrow()` / `fill_poly()` helpers** in the engine (every recent spec copies them, like `label()` was).
     Impact: low (less copy-paste, fewer spec bugs).
+11. **Drift focus on the active part:** aim the section drift at where the current step's new linework is (an
+    optional per-step focus point in the spec) instead of the drawing centre. Impact: low-medium, stronger
+    "look here" cue.
+12. **Step bodies under ~80 characters** in new specs so the 36px text stays at two lines (most queued bodies now
+    wrap to three). Impact: low, faster to read.
 
 ## Tried and dropped
 
