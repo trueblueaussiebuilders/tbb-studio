@@ -97,7 +97,9 @@ def _tri(pcol, acov, zb, P, D, color, sa):
     l0 = ((y1 - y2) * (gx - x2) + (x2 - x1) * (gy - y2)) / denom
     l1 = ((y2 - y0) * (gx - x2) + (x0 - x2) * (gy - y2)) / denom
     l2 = 1.0 - l0 - l1
-    depth = l0 * D[0] + l1 * D[1] + l2 * D[2]
+    # perspective-correct depth: 1/z is linear in screen space (z itself is not, so big faces used to read
+    # too far away in the middle and let parts behind them show through)
+    depth = 1.0 / (l0 / D[0] + l1 / D[1] + l2 / D[2])
     zbs = zb[iy0:iy1, ix0:ix1]
     mask = (l0 >= 0) & (l1 >= 0) & (l2 >= 0) & (depth < zbs)
     if not mask.any(): return
@@ -124,7 +126,7 @@ def _seg(pcol, acov, zb, A, B, dA, dB, color, pa, hw):
     cx = ax + t * dx; cy = ay + t * dy
     dist = np.hypot(gx - cx, gy - cy)
     cov = np.clip(hw + 0.5 - dist, 0.0, 1.0)
-    depth = dA + t * (dB - dA)
+    depth = 1.0 / ((1.0 - t) / dA + t / dB)        # perspective-correct, as in _tri
     zbs = zb[iy0:iy1, ix0:ix1]
     vis = (cov > 0) & (depth <= zbs + (0.0025 * depth + 2.0))
     saf = np.where(vis, pa * cov, 0.0).astype(np.float32)
