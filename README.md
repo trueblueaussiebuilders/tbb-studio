@@ -37,6 +37,8 @@ videos/002-tilt-up-panel/spec.py    # META (on-screen text), NARRATION (voice li
 Optional: `model3d()` (3D model for the hook, result and cover; the hook starts it half built, change with
 `META["hook_start"] = 0.3` etc.) and `META["xray"] = {"after_step": 4, "upto": 12, "hot": [5, 6]}`
 (a 3D "built so far" interlude at the end of that step; see IMPROVEMENTS.md).
+In the result, the 3D model rebuilds start to finish in build order (about 2s) before orbiting finished;
+turn that off per video with `META["replay"] = False`.
 Every video gets a synthesised music bed ducked under the voice plus light sound effects (`engine/audio.py`);
 turn them off per video with `META["music"] = False` / `META["sfx"] = False`.
 Keep `NARRATION["hook"]` to one or two short sentences (about 12 words, no "Here's how": `hook_sub` says it on screen)

@@ -41,7 +41,38 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
   most comments (2). Commercial (014) did well with a "holds nothing up" surprise claim, so the claim matters more
   than the category. 017 shower waterproofing follows it: "the tiles aren't the waterproofing".
 
+- 2026-11-24: still likes only (insights permission not enabled). 008 steel portal frame 30, 013 post-tensioned slab
+  30, 014 curtain wall 29, 012 road pavement 24, 004 timber wall frame 23, 015 roof trusses 16 after ~12 hours,
+  003 10, 005 9, 009 6, 011 4, 006 3, 010 1, 001/002/007 0. All five posts since 012 (music bed, short + instant
+  hook, part-built first frame) are in the top six; 015 is tracking like 014 did on day one. Comments are still
+  rare (2 on 013, 1 on 006), so a caption question is worth testing (Backlog #4). 018 concrete driveway follows
+  the surprise-claim hook pattern on a relatable home topic: "those cracks in your driveway were planned".
+
 ## Changelog
+
+### 2026-11-24: 3D build replay in the result + perspective-correct 3D depth
+- **What:** (1) when the 3D model takes over in the result, it now rebuilds from the ground up in build order,
+  each order dropping in one after another over about 2 seconds (30% of the result, 1.4-2.2s), then keeps orbiting
+  finished. The section label swaps to "3D  //  START TO FINISH" (it used to keep saying "SECTION ..." over the
+  3D shot). `replay_window()` / `replay_appear()` in engine/blueprint.py; opt out per spec with
+  `META["replay"] = False`. (2) engine/three_d.py now interpolates depth perspective-correctly (1/z) in the
+  z-buffer: big faces used to read too far away mid-face, so parts behind them showed through. Visible fixes:
+  017's membrane no longer z-fights through the floor tiles, 015's trusses no longer show through the roof sheets,
+  018's mesh stays hidden inside the slab.
+- **Why:** review of 016/017 as a phone viewer: the result was the calmest part of the video (a slow orbit of a
+  model the viewer had already seen in the hook). A fast start-to-finish rebuild is a timelapse recap of every
+  step, a final pattern interrupt, and it ends the loop on the build-up the hook starts from.
+- **Checked:** tools/check.py --queue clean (016, 017, 018); before/after result frames of 016 with real timings
+  (old: static finished orbit; new: piles, posts, panels row by row, finished) and replay frames of 013, 017,
+  018; old specs 001, 008, 011, 013 still build; full local build of 016 (next to post): 61.7s, audio and video
+  lengths match, -16.1 LUFS, peak -1.1 dBFS. Before/after covers of 015 and 017 for the depth fix.
+- **First video:** 016-noise-wall (posts 2026-11-24) and every video with a 3D model after it. No spec changes.
+- **Files:** engine/blueprint.py, engine/three_d.py.
+
+### 2026-11-24 (content): 018 concrete driveway
+- Driveway plan inset lined up with the section (the saw cuts drop in on both at the same x), a plate compactor
+  pass per base layer, a saw blade cutting each joint, and the result shows the slab shrinking and cracking right
+  under the cuts. 3D: garage + driveway, x-ray after the mesh step with the slab still a ghost.
 
 ### 2026-11-23: Slow camera drift on the drawing + bigger step text
 - **What:** (1) the 2D section now drifts all through the steps: a slow push-in (to 4.5%) over each odd step and a
@@ -203,28 +234,28 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
    API says `(#10) Application does not have permission`. Add `instagram_manage_insights` to the Meta app, generate a
    new Page token for the account with it ticked, and update the IG_ACCESS_TOKEN secret. Impact: unlocks every
    data-driven decision below.
-2. **Use the empty top band in every video:** turn 015's roof-plan inset and detail bubble into engine helpers
-   (`inset()`, `detail_bubble()`), or a small live 3D mini-map with the current step highlighted. Impact: medium,
-   more to look at during the 2D steps.
-3. **On-screen number in the hook** (e.g. "90% OF THIS ROAD IS ROCK") where a safe, general figure exists. Impact: medium.
-4. **Save / comment prompt.** End-card versions ("Save this for your next build", "Which step surprised you?") need
-   Mathew's OK first: the current content rule is that the end card says only "Follow for more". Meanwhile a question
-   as the caption's first line can test the same idea. Impact: saves and comments (weigh heavily in Reels ranking).
-5. **Publish retry with a fresh container** for transient Instagram errors (no failures seen yet). Impact: reliability.
-6. **"Wrong vs right" / "Spot the defect" format** as a second series. Impact: shares; needs insights first.
-7. **Music variety:** a few bed variants (key/tempo per category) so the channel doesn't repeat one loop forever,
-   and a short riser into the 3D result. Impact: low-medium; wait for watch-time data to confirm the bed helps.
-8. **Run tools/check.py in CI** (preview/post workflows, warning-only at first) so a layout regression from an
-   engine change is caught even when no one renders frames. Impact: reliability.
-9. **Cache pip wheels in post.yml** (`setup-python` `cache: pip`): pycairo builds from source each run (~10s).
-    Impact: low.
-10. **Shared `arrow()` / `fill_poly()` helpers** in the engine (every recent spec copies them, like `label()` was).
-    Impact: low (less copy-paste, fewer spec bugs).
-11. **Drift focus on the active part:** aim the section drift at where the current step's new linework is (an
-    optional per-step focus point in the spec) instead of the drawing centre. Impact: low-medium, stronger
-    "look here" cue.
-12. **Step bodies under ~80 characters** in new specs so the 36px text stays at two lines (most queued bodies now
-    wrap to three). Impact: low, faster to read.
+2. **Caption question to drive comments** (comments are near zero; they're counted even without insights, so this
+   is measurable now): an optional `META["question"]` that engine/build.py puts as the caption's last line before
+   the hashtags (e.g. "Did you know the cuts were on purpose?"). Impact: comments, which Reels ranking weighs.
+3. **Use the empty top band in every video:** turn the plan insets (015, 017, 018) and 015's detail bubble into engine
+   helpers (`inset()` frame + caption cycling, `detail_bubble()`). Impact: medium, more to look at during the 2D
+   steps, and less copy-paste in specs.
+4. **Faster 3D rendering in the post build:** 015's render took ~9 min on the runner (2 cores); cache the static
+   parts' layer between frames or render the 3D at a lower supersample when it's moving fast. Impact: reliability
+   (posts land closer to 7:30pm, more headroom).
+5. **Replay sound:** soft ticks as each build order lands in the result replay (engine/audio.py already knows the
+   result timing). Impact: low-medium, makes the replay feel physical.
+6. **On-screen number in the hook** (e.g. "90% OF THIS ROAD IS ROCK") where a safe, general figure exists. Impact: medium.
+7. **Save / comment prompt on the end card.** Needs Mathew's OK first: the current content rule is that the end card
+   says only "Follow for more". Impact: saves and comments.
+8. **Publish retry with a fresh container** for transient Instagram errors (no failures seen yet). Impact: reliability.
+9. **"Wrong vs right" / "Spot the defect" format** as a second series. Impact: shares; needs insights first.
+10. **Music variety:** a few bed variants (key/tempo per category) so the channel doesn't repeat one loop forever.
+    Impact: low-medium; wait for watch-time data to confirm the bed helps.
+11. **Run tools/check.py in CI** (preview/post workflows, warning-only at first). Impact: reliability.
+12. **Shared `arrow()` / `fill_poly()` helpers** in the engine (every recent spec copies them). Impact: low.
+13. **Drift focus on the active part** (optional per-step focus point). Impact: low-medium.
+14. **Cache pip wheels in post.yml** (`setup-python` `cache: pip`). Impact: low.
 
 ## Tried and dropped
 

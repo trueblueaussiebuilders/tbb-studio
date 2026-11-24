@@ -320,6 +320,26 @@ def _xray_amount(spec, tl, t):
     return min(ease((t - w[0]) / 0.3), ease((w[1] - t) / 0.3)), w
 
 
+def replay_window(spec, tl):
+    """Build replay in the result: the 3D model rebuilds from the ground up in build order (a quick timelapse
+    recap of every step), then keeps orbiting finished. Opt out per spec with META["replay"] = False.
+    Returns (t0, t1) or None."""
+    if not spec.META.get("replay", True) or not _model(spec): return None
+    dur = tl.end0 - tl.res0
+    t0 = tl.res0 + 0.45 * dur + 0.15            # just after the 3D shot starts fading in
+    return t0, t0 + clamp(0.3 * dur, 1.4, 2.2)
+
+
+def replay_appear(spec, tl, t):
+    """appear(part) for the build replay (None once it's finished, or if the video opts out)."""
+    w = replay_window(spec, tl)
+    if not w or t >= w[1] + 0.4: return None
+    parts = _model(spec)[0]
+    n = max(p.order for p in parts) or 1
+    step = (w[1] - w[0]) / n                    # each build order lands one after another
+    return lambda part: 1.0 if part.base or part.order == 0 else clamp((t - w[0] - (part.order - 1) * step) / 0.4)
+
+
 def draw_frame(spec, tl, t):
     M = spec.META
     m3 = _model(spec)
@@ -366,13 +386,13 @@ def draw_frame(spec, tl, t):
 
     # section label + the video's own drawing
     kx, xw = _xray_amount(spec, tl, t)
-    text(ctx, M.get("section_label", "SECTION A-A  (NTS)"), 90, 385, 24, WHITE,
-         alpha=0.7 * clamp((t - tl.s(1)) / 0.4) * clamp(1 - 2 * kx), bold=True, spacing=2)
-    k3 = 0.0
+    kr = 0.0                                   # the 3D result shot (fades in ~45% into the result)
     if m3 and t >= tl.res0:
         dur = tl.end0 - tl.res0
-        k3 = ease((t - tl.res0 - 0.45 * dur) / 0.7)
-    k3 = max(k3, kx)
+        kr = ease((t - tl.res0 - 0.45 * dur) / 0.7)
+    text(ctx, M.get("section_label", "SECTION A-A  (NTS)"), 90, 385, 24, WHITE,
+         alpha=0.7 * clamp((t - tl.s(1)) / 0.4) * clamp(1 - 2 * max(kx, kr)), bold=True, spacing=2)
+    k3 = max(kr, kx)
     if k3 < 1:
         if k3 > 0:
             ctx.push_group(); _section(ctx, spec, tl, t); ctx.pop_group_to_source(); ctx.paint_with_alpha(1 - k3)
@@ -390,7 +410,8 @@ def draw_frame(spec, tl, t):
     elif k3 > 0:
         cfg = m3[1]
         u = (t - tl.res0) / max(tl.end0 - tl.res0, 1)
-        _draw3d(ctx, spec, cfg.get("cy_result", 820), cfg["yaw"] - 25 + 50 * u, alpha=k3)
+        _draw3d(ctx, spec, cfg.get("cy_result", 820), cfg["yaw"] - 25 + 50 * u, alpha=k3, appear=replay_appear(spec, tl, t))
+        text(ctx, "3D  //  START TO FINISH", 90, 385, 24, BLUE, alpha=0.9 * clamp(2 * kr - 1), bold=True, spacing=2)
 
     # step panel
     def panel(num_txt, title, body, t0, t1, last=False):
