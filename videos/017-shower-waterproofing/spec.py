@@ -12,6 +12,7 @@ META = {
     "hook": ["THE TILES", "AREN'T THE", "WATERPROOFING."],
     "hook_sub": "HOW A SHOWER IS WATERPROOFED",
     "cover": ["TILES DON'T", "STOP THE", "WATER."],
+    "question": "Did you know the tiles aren't the waterproofing? Yes or no in the comments.",
     "hook_start": 0.55,
     "xray": {"after_step": 6, "upto": 6, "hot": [6]},   # the membrane in 3D, tiles and screen still to come
     "steps": [

@@ -12,6 +12,7 @@ META = {
     "hook": ["THOSE CRACKS IN", "YOUR DRIVEWAY", "WERE PLANNED."],
     "hook_sub": "HOW A CONCRETE DRIVEWAY IS BUILT",
     "cover": ["THE CRACKS", "ARE ON", "PURPOSE."],
+    "question": "Go and look: do the cracks in your driveway sit in the joints? Tell us below.",
     "hook_start": 0.5,
     "xray": {"after_step": 4, "upto": 5, "hot": [5]},     # mesh on the base, the slab still to come
     "steps": [

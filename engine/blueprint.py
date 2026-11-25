@@ -229,6 +229,18 @@ def stamp(ctx, label, x, y, p, col, fade=0.0, angle=-0.12):
     ctx.restore()
 
 
+# ---------------------------------------------------------------- caption
+def caption(spec):
+    """The Instagram caption. If META["question"] is set (one short, easy-to-answer question), it goes right after
+    the first line, so it shows in the feed preview before "... more" and invites a comment. Older specs without
+    the field get their CAPTION unchanged."""
+    cap = spec.CAPTION.strip("\n")
+    q = spec.META.get("question", "").strip()
+    if not q: return cap
+    first, sep, rest = cap.partition("\n")
+    return first + "\n\n" + q + ("\n" + rest if sep else "")
+
+
 # ---------------------------------------------------------------- background
 _BG = None
 def background():
@@ -254,8 +266,9 @@ def background():
 _MODEL_CACHE = {}
 def _model(spec):
     if not hasattr(spec, "model3d"): return None
-    if id(spec) not in _MODEL_CACHE: _MODEL_CACHE[id(spec)] = spec.model3d()
-    return _MODEL_CACHE[id(spec)]
+    # cached on the spec module itself (an id(spec) key could be reused by a later spec in the same process)
+    if getattr(spec, "_model3d_cache", None) is None: spec._model3d_cache = spec.model3d()
+    return spec._model3d_cache
 
 
 def _draw3d(ctx, spec, cy, yaw, alpha=1.0, appear=None, pitch=None, scale_mul=1.0, highlight=None, ghost=None):

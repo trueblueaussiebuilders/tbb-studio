@@ -48,7 +48,47 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
   rare (2 on 013, 1 on 006), so a caption question is worth testing (Backlog #4). 018 concrete driveway follows
   the surprise-claim hook pattern on a relatable home topic: "those cracks in your driveway were planned".
 
+- 2026-11-25: still likes only (insights permission not enabled). 013 post-tensioned slab 31, 008 steel portal frame
+  30, 014 curtain wall 29, 012 road pavement 24, 004 timber wall frame 23, 015 roof trusses 18, 003 10, 005 9, 009 6,
+  011 4, 016 noise wall 4 after ~13 hours, 006 3, 010 1, 001/002/007 0. 016 is the first post since 012 to start
+  slowly (015 had 16 at the same age). It is also the third infrastructure video, and all three are at the bottom
+  (005 9, 010 1, 016 4), so infrastructure is now the weakest category across three posts, not one. Next
+  infrastructure pick should lead with the most relatable angle (a road or bridge people drive on daily) and a
+  surprise claim. Comments are still 3 in total across 16 posts, so the caption question (shipped today) is the test.
+
 ## Changelog
+
+### 2026-11-25: Caption question + build-replay sound
+- **What:** (1) new optional spec field `META["question"]`: one short, easy-to-answer question. `bp.caption(spec)`
+  (used by engine/build.py for `<slug>.caption.txt` and `--caption-only`) puts it right after the caption's first
+  line, so it shows in the feed preview before "... more". Specs without it get their CAPTION unchanged.
+  publish/insights.py adds a `question` column to insights.csv so comment counts can be compared with and without.
+  Added to the three queued videos: 017 "Did you know the tiles aren't the waterproofing? Yes or no in the
+  comments.", 018 "Go and look: do the cracks in your driveway sit in the joints? Tell us below.", 019 "Have you
+  ever parked under one of these without knowing? Tell us below."
+  (2) engine/audio.py: a soft woody "tock" as each build order lands in the result's 3D replay, rising through a
+  C major pentatonic scale as the model completes (at most ~8 per second; always one on the last part). Positions
+  come from `replay_window()` so they stay in sync with the picture. Opt out with `META["replay_sfx"] = False`.
+- **Why:** comments are the one engagement number we can measure now (3 across 16 posts) and Reels ranking weighs
+  them; an easy yes/no question in the visible part of the caption is the standard fix (Backlog #2). The replay
+  was the only big on-screen change with no sound; ticks make the timelapse feel physical (Backlog #5).
+- **Checked:** captions of 017-019 show the question as the second paragraph, older specs (001, 008, 011) unchanged;
+  tick times match the replay (017: lands 56.36-57.84s inside the 56.06-57.75s replay), tick peak 0.63 vs whoosh
+  0.83 and thump 1.13 so the effects' overall level is unchanged; full local build of 017 (next to post): 61.8s,
+  audio and video lengths match, -16.2 LUFS, true peak -1.2 dBFS; replay frames unchanged; tools/check.py --queue
+  clean (017, 018, 019); old specs 001, 008, 011 still build; insights.py `spec_info` returns the new column.
+  (3) small fix: the 3D model cache is now stored on the spec module instead of keyed by `id(spec)`, which a
+  script looping over videos could reuse (found while testing the ticks: 019 briefly got 016's model).
+- **First video:** 017-shower-waterproofing (posts 2026-11-25) for both.
+- **Files:** engine/blueprint.py, engine/build.py, engine/audio.py, publish/insights.py, README.md,
+  videos/017, 018, 019 specs.
+
+### 2026-11-25 (content): 019 transfer beam
+- Elevation along a transfer beam: ghost of the beam and the columns above in step 1, props, deep formwork with a
+  DEEP dimension, two layers of bottom bars, ligatures closer near the supports, starter bars, a poker vibrator
+  riding the pour front, then the upper columns and floors above; the result traces the load path (down the upper
+  columns, sideways through the beam, down the wide columns) over "OPEN SPACE BELOW". 3D: two transfer frames,
+  props and forms left out so the finished model shows the columns stopping on the beams.
 
 ### 2026-11-24: 3D build replay in the result + perspective-correct 3D depth
 - **What:** (1) when the 3D model takes over in the result, it now rebuilds from the ground up in build order,
@@ -234,18 +274,18 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
    API says `(#10) Application does not have permission`. Add `instagram_manage_insights` to the Meta app, generate a
    new Page token for the account with it ticked, and update the IG_ACCESS_TOKEN secret. Impact: unlocks every
    data-driven decision below.
-2. **Caption question to drive comments** (comments are near zero; they're counted even without insights, so this
-   is measurable now): an optional `META["question"]` that engine/build.py puts as the caption's last line before
-   the hashtags (e.g. "Did you know the cuts were on purpose?"). Impact: comments, which Reels ranking weighs.
-3. **Use the empty top band in every video:** turn the plan insets (015, 017, 018) and 015's detail bubble into engine
+2. **Use the empty top band in every video:** turn the plan insets (015, 017, 018) and 015's detail bubble into engine
    helpers (`inset()` frame + caption cycling, `detail_bubble()`). Impact: medium, more to look at during the 2D
    steps, and less copy-paste in specs.
-4. **Faster 3D rendering in the post build:** 015's render took ~9 min on the runner (2 cores); cache the static
+3. **Faster 3D rendering in the post build:** 015's render took ~9 min on the runner (2 cores); cache the static
    parts' layer between frames or render the 3D at a lower supersample when it's moving fast. Impact: reliability
    (posts land closer to 7:30pm, more headroom).
-5. **Replay sound:** soft ticks as each build order lands in the result replay (engine/audio.py already knows the
-   result timing). Impact: low-medium, makes the replay feel physical.
-6. **On-screen number in the hook** (e.g. "90% OF THIS ROAD IS ROCK") where a safe, general figure exists. Impact: medium.
+4. **On-screen number in the hook** (e.g. "90% OF THIS ROAD IS ROCK") where a safe, general figure exists. Impact: medium.
+5. **Judge the caption question after ~5 posts** (017-021): compare comments per post with the 16 before it (3 in
+   total). If no lift, try putting the question as the very first caption line instead. Impact: comments.
+6. **End card motion:** the last ~3s are a static "FOLLOW FOR MORE" over a dimmed frame; keep the 3D model slowly
+   orbiting behind it at higher brightness (no extra text, per the content rule). Impact: low-medium, retention at
+   the loop point.
 7. **Save / comment prompt on the end card.** Needs Mathew's OK first: the current content rule is that the end card
    says only "Follow for more". Impact: saves and comments.
 8. **Publish retry with a fresh container** for transient Instagram errors (no failures seen yet). Impact: reliability.

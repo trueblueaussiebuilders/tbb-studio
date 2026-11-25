@@ -53,7 +53,7 @@ def main():
     slug = os.path.basename(os.path.normpath(a.folder))
     os.makedirs(a.out, exist_ok=True)
     if a.caption_only:
-        print(SPEC.CAPTION); return
+        print(bp.caption(SPEC)); return
 
     tim_path = os.path.join(a.out, f"{slug}.timings.json")
     if a.frames is not None:   # quick look without voice: reuse timings if present
@@ -86,7 +86,7 @@ def main():
                         "-af", "highpass=f=70,loudnorm=I=-14:TP=-1.5:LRA=11", "-ar", "48000", "-c:a", "aac", "-b:a", "128k",
                         "-shortest", "-movflags", "+faststart", final + ".tmp.mp4"], check=True)
         os.replace(final + ".tmp.mp4", final)
-    open(os.path.join(a.out, f"{slug}.caption.txt"), "w").write(SPEC.CAPTION)
+    open(os.path.join(a.out, f"{slug}.caption.txt"), "w").write(bp.caption(SPEC))
     write_cover(a.out, slug)
     print(f"[{slug}] -> {final}")
 

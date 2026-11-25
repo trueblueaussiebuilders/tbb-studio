@@ -40,7 +40,10 @@ Optional: `model3d()` (3D model for the hook, result and cover; the hook starts 
 In the result, the 3D model rebuilds start to finish in build order (about 2s) before orbiting finished;
 turn that off per video with `META["replay"] = False`.
 Every video gets a synthesised music bed ducked under the voice plus light sound effects (`engine/audio.py`);
-turn them off per video with `META["music"] = False` / `META["sfx"] = False`.
+turn them off per video with `META["music"] = False` / `META["sfx"] = False` (the build replay's rising "tock" per part
+with `META["replay_sfx"] = False`).
+`META["question"]`: one short, easy-to-answer question; the caption puts it right after the first line (visible before
+"... more") to invite comments. Build the caption with `python -m engine.build videos/<slug> --caption-only`.
 Keep `NARRATION["hook"]` to one or two short sentences (about 12 words, no "Here's how": `hook_sub` says it on screen)
 so the hook scene stays under 4.5s. Check the layout automatically before committing:
 ```

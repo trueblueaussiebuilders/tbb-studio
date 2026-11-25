@@ -4,7 +4,8 @@ mix(voice_track, tim, spec) returns the final narration track with:
   * a soft music bed: warm additive pad chords (vi-IV-I-V), a plucked arpeggio, and from step 1 a soft kick
     on every beat. It's ducked under the voice (about -20 dB when speaking) and fades out over the end card.
   * light sound effects on what the viewer sees change: a thump when the hook punchline pops in, a soft
-    whoosh at each new step, a shimmer when the 3D x-ray interlude opens, a two-note chime on the end card.
+    whoosh at each new step, a shimmer when the 3D x-ray interlude opens, a soft rising "tock" as each build
+    order lands in the result's 3D replay, a two-note chime on the end card.
 
 Opt out per video with META["music"] = False (or META["sfx"] = False for effects only).
 Everything is deterministic, so a rebuild sounds the same.
@@ -118,6 +119,38 @@ def _chime(sr):
     return out * _env(n, sr, 0.003, 0.3) * 0.6
 
 
+TICK_NOTES = (72, 74, 76, 79, 81, 84, 86, 88, 91, 93, 96)   # C major pentatonic, rising with the build
+
+
+def _tick(sr, m):
+    """Short woody knock for a part landing in the build replay: a quickly decaying tone plus a tiny click."""
+    n = int(0.16 * sr); t = np.arange(n, dtype=np.float32) / sr
+    f = _hz(m)
+    body = (np.sin(2 * np.pi * f * t) + 0.3 * np.sin(2 * np.pi * 2.01 * f * t) * np.exp(-t / 0.012)) * np.exp(-t / 0.035)
+    click = _noise(n, m) * np.exp(-t / 0.002) * 0.3
+    return ((body + click) * _env(n, sr, 0.001, 0.02)).astype(np.float32)
+
+
+def replay_ticks(tl, spec):
+    """(time, midi note) for each build order landing in the result's 3D build replay (engine/blueprint.py)."""
+    from engine import blueprint as bp
+    w = bp.replay_window(spec, tl)
+    if not w: return []
+    parts = bp._model(spec)[0]
+    n = max(p.order for p in parts) or 1
+    step = (w[1] - w[0]) / n
+    orders = sorted({p.order for p in parts if not p.base and p.order > 0})
+    out, last = [], -1.0
+    for k, o in enumerate(orders):
+        tk = w[0] + (o - 1) * step + 0.3        # a part drops in over 0.4s; it visibly lands ~0.3s after it starts
+        if tk - last < 0.12 and k != len(orders) - 1: continue      # dense models: no faster than ~8 ticks/s
+        if out and tk - last < 0.12: out.pop()                     # ... but always tick on the last part
+        # pitch climbs through the scale over the whole build, however many orders the model has
+        i = round(k * (len(TICK_NOTES) - 1) / max(len(orders) - 1, 1)) if len(orders) > len(TICK_NOTES) else k
+        out.append((tk, TICK_NOTES[i])); last = tk
+    return out
+
+
 def _rms(x):
     return float(np.sqrt(np.mean(x.astype(np.float64) ** 2))) if len(x) else 0.0
 
@@ -166,6 +199,9 @@ def sfx(n, sr, tim, spec):
     if hasattr(spec, "model3d"):
         w = bp.xray_window(spec, tl)
         if w: _add(out, int(w[0] * sr), _shimmer(sr) * 0.5)                           # x-ray interlude opens
+        if M.get("replay_sfx", True) is not False:
+            for tk, m in replay_ticks(tl, spec):                                        # build replay: each order lands
+                _add(out, int(tk * sr), _tick(sr, m) * 0.45)
     _add(out, int((tl.end0 + 0.45) * sr), _chime(sr) * 0.7)                            # end card
     return out
 

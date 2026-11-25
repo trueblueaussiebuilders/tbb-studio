@@ -21,7 +21,7 @@ METRICS = ["views", "reach", "likes", "comments", "shares", "saved", "total_inte
            "ig_reels_avg_watch_time", "ig_reels_video_view_total_time"]
 COLUMNS = ["slug", "category", "title", "hook", "posted", "media_id", "permalink", "fetched_utc",
            "views", "reach", "likes", "comments", "shares", "saved", "total_interactions",
-           "avg_watch_s", "total_watch_s", "unsupported"]
+           "avg_watch_s", "total_watch_s", "unsupported", "question"]
 def permission_hint():
     if ig.token().startswith("EA"):     # Facebook-login token (what this account uses)
         return ("The Instagram token has no insights permission. In the Meta app (developers.facebook.com -> your app), "
@@ -78,7 +78,7 @@ def spec_info(slug):
         m = re.search(rf'"{name}":\s*"([^"]*)"', src); return m.group(1) if m else ""
     m = re.search(r'"hook":\s*\[([^\]]*)\]', src)
     hook = " / ".join(re.findall(r'"([^"]*)"', m.group(1))) if m else ""
-    return field("category"), field("title"), hook
+    return field("category"), field("title"), hook, field("question")
 
 
 def metrics(mid, unsupported):
@@ -111,8 +111,8 @@ def main():
     now = time.strftime("%Y-%m-%dT%H:%MZ", time.gmtime())
     unsupported, rows, no_perm, failed = set(), [], False, 0
     for slug, date, mid in posted():
-        cat, title, hook = spec_info(slug)
-        row = {"slug": slug, "category": cat, "title": title, "hook": hook, "posted": date, "media_id": mid,
+        cat, title, hook, question = spec_info(slug)
+        row = {"slug": slug, "category": cat, "title": title, "hook": hook, "question": question, "posted": date, "media_id": mid,
                "fetched_utc": now}
         try:
             info = get(mid, {"fields": "permalink,like_count,comments_count"})

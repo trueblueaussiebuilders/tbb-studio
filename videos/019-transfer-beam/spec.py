@@ -12,6 +12,7 @@ META = {
     "hook": ["THESE COLUMNS", "DON'T REACH", "THE GROUND."],
     "hook_sub": "HOW A TRANSFER BEAM IS BUILT",
     "cover": ["THESE COLUMNS", "STOP IN", "MID-AIR."],
+    "question": "Have you ever parked under one of these without knowing? Tell us below.",
     "hook_start": 0.55,
     "xray": {"after_step": 5, "upto": 3, "hot": [3]},     # bars + ligatures in, the concrete still a ghost
     "steps": [
