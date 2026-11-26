@@ -353,6 +353,26 @@ def replay_appear(spec, tl, t):
     return lambda part: 1.0 if part.base or part.order == 0 else clamp((t - w[0] - (part.order - 1) * step) / 0.4)
 
 
+END_TEXT_Y = 560                     # end card with the 3D model: text sits where the hook text was
+
+
+def end_model_on(spec):
+    """End card keeps the finished 3D model on screen (opt out with META["end_model"] = False). Old specs with a
+    witty sign-off keep the original text-only end card, since their sign-off lines need the middle of the frame."""
+    return bool(_model(spec)) and spec.META.get("end_model", not spec.META.get("signoff"))
+
+
+def end_motion(spec, tl, t):
+    """End card camera: the finished model glides from the result shot down to the hook's position and turns back
+    to the hook's starting angle, so the Reel's loop back to frame 0 (the same model, half built, same place and
+    angle) is nearly seamless. Returns (cy, yaw)."""
+    cfg = _model(spec)[1]
+    cr, ch = cfg.get("cy_result", 820), cfg.get("cy_hook", 1010)
+    u = ease((t - tl.end0) / 0.6)
+    w = ease(clamp((t - tl.end0) / max(tl.duration - tl.end0 - 0.15, 0.5)))
+    return cr + (ch - cr) * u, cfg["yaw"] + 25 * (1 - w)    # the result orbit ends at yaw + 25
+
+
 def draw_frame(spec, tl, t):
     M = spec.META
     m3 = _model(spec)
@@ -420,7 +440,7 @@ def draw_frame(spec, tl, t):
                 pitch=cfg.get("pitch", 18) + 6, scale_mul=xc.get("scale", 0.92), highlight=lambda p: p.order in hot,
                 ghost=lambda p: not p.base and p.order > xc["upto"])
         text(ctx, "3D  //  BUILT SO FAR", 90, 385, 24, BLUE, alpha=0.9 * clamp(2 * kx - 1), bold=True, spacing=2)
-    elif k3 > 0:
+    elif k3 > 0 and not (t >= tl.end0 and end_model_on(spec)):   # the end card carries the model on from here
         cfg = m3[1]
         u = (t - tl.res0) / max(tl.end0 - tl.res0, 1)
         _draw3d(ctx, spec, cfg.get("cy_result", 820), cfg["yaw"] - 25 + 50 * u, alpha=k3, appear=replay_appear(spec, tl, t))
@@ -463,8 +483,19 @@ def draw_frame(spec, tl, t):
         text(ctx, lab, x, tb + 32, 18, BLUE, alpha=0.8, bold=True, spacing=2)
         text(ctx, val, x, tb + 78, 28, WHITE, alpha=0.8, bold=True)
 
-    # end card: follow + witty sign-off
-    if t >= tl.end0:
+    # end card: follow (+ the finished 3D model, turning back to the hook's framing for the loop)
+    if t >= tl.end0 and end_model_on(spec):
+        k = clamp((t - tl.end0) / 0.4)
+        ctx.set_source_rgba(*BG, 0.92 * k); ctx.paint()
+        cy, yaw = end_motion(spec, tl, t)
+        _draw3d(ctx, spec, cy, yaw)                      # same model, same spot and angle as the result's last frame
+        kt = clamp((t - tl.end0 - 0.2) / 0.4)
+        text(ctx, "FOLLOW FOR MORE", W / 2, END_TEXT_Y + (1 - ease(kt)) * 24, 64, WHITE, alpha=kt, bold=True, anchor="c")
+        k2 = clamp((t - tl.end0 - 0.6) / 0.4)
+        polyline(ctx, [(W / 2 - 300, END_TEXT_Y + 50), (W / 2 + 300, END_TEXT_Y + 50)], k2, ORANGE, 3)
+        k3 = clamp((t - tl.end0 - 0.9) / 0.4)
+        text(ctx, HANDLE, W / 2, END_TEXT_Y + 115, 30, BLUE, alpha=k3, bold=True, anchor="c", spacing=3)
+    elif t >= tl.end0:                                   # text-only end card (no model, or an old sign-off spec)
         k = clamp((t - tl.end0) / 0.4)
         ctx.set_source_rgba(*BG, 0.92 * k); ctx.paint()
         text(ctx, "FOLLOW FOR MORE", W / 2, 840, 64, WHITE, alpha=k, bold=True, anchor="c")

@@ -39,6 +39,8 @@ Optional: `model3d()` (3D model for the hook, result and cover; the hook starts 
 (a 3D "built so far" interlude at the end of that step; see IMPROVEMENTS.md).
 In the result, the 3D model rebuilds start to finish in build order (about 2s) before orbiting finished;
 turn that off per video with `META["replay"] = False`.
+The end card keeps the finished model on screen and moves it back to the hook's position and angle so the Reel loops
+smoothly into frame 0 ("FOLLOW FOR MORE" sits above it); turn that off with `META["end_model"] = False`.
 Every video gets a synthesised music bed ducked under the voice plus light sound effects (`engine/audio.py`);
 turn them off per video with `META["music"] = False` / `META["sfx"] = False` (the build replay's rising "tock" per part
 with `META["replay_sfx"] = False`).

@@ -56,7 +56,47 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
   infrastructure pick should lead with the most relatable angle (a road or bridge people drive on daily) and a
   surprise claim. Comments are still 3 in total across 16 posts, so the caption question (shipped today) is the test.
 
+- 2026-11-26: still likes only (insights permission not enabled). 013 post-tensioned slab 31, 008 steel portal frame
+  30, 014 curtain wall 29, 012 road pavement 24, 017 shower waterproofing 23 after ~12 hours, 004 timber wall frame 23,
+  015 roof trusses 18, 003 10, 005 9, 016 noise wall 7, 009 6, 011 4, 006 3, 010 1, 001/002/007 0. 017 is by far the
+  best reno post (the other two have 3 and 4) and matched 014's first day, so a strong surprise claim lifted a weak
+  category again (as 012 did for civil): across 012, 014, 017 the claim matters more than the category. 016 has
+  stalled at 7, so infrastructure stays the weakest category (three of three at the bottom). 017 got 0 comments
+  despite the caption question, but that's one post; keep judging over 5 (Backlog #4). 020 office partition follows
+  the pattern with "this office wall has a gap at the top".
+
 ## Changelog
+
+### 2026-11-26: End card keeps the 3D model and hands it back to the hook (seamless loop)
+- **What:** the end card used to dim everything to near-black and put "FOLLOW FOR MORE" in the middle of the frame,
+  on top of the faded model. Now the finished 3D model stays on screen at full brightness: it carries straight on
+  from the result's last frame (same place, angle and size, so there's no cut or double image), glides down to the
+  hook's position over 0.6s and turns back to the hook's starting angle by the last frame. "FOLLOW FOR MORE"
+  (rising in), the orange rule and the handle now sit above it, where the hook text was. Reels loop straight back
+  to frame 0, which shows the same model half built in the same spot and angle under the hook text, so the loop
+  reads as the build starting again instead of a jump from a dark card. `end_model_on()` / `end_motion()` /
+  `END_TEXT_Y` in engine/blueprint.py; opt out per spec with `META["end_model"] = False`. Specs with a witty
+  `signoff` (001-003) keep the old text-only card by default, since their sign-off lines need the middle. The
+  result's underlying 3D render is skipped once the end card takes over, so it costs no extra render time.
+- **Why:** review of 018/019 as a phone viewer: the last ~3s were the dullest of the video (a near-empty dark frame),
+  right at the loop point where Reels counts replays, and "FOLLOW FOR MORE" was drawn over the fading model.
+  Backlog #6.
+- **Checked:** tools/check.py --queue clean (018, 019, 020); before/after end frames of 019 (old: dark card, text over
+  a ghosted model; new: bright model under clean text, continuous through the cut at the end of the result) and 020
+  (last frame matches frame 0's framing); 008 (no sign-off) gets the new card, 001 (sign-off) is unchanged; old
+  specs 001, 011, 013 report only their existing mid-video issues; full local build of 018 (next to post): 67.0s,
+  audio and video lengths match, -16.1 LUFS, true peak -1.2 dBFS, last frame lines up with frame 0.
+- **First video:** 018-concrete-driveway (posts 2026-11-26) and every video with a 3D model after it. No spec changes.
+- **Files:** engine/blueprint.py, README.md.
+
+### 2026-11-26 (content): 020 office partition + "board" 3D material
+- Wall elevation (floor track, deflection head track, studs cut short and dashed behind the deep leg, noggings, a
+  cable through the stud holes, acoustic batts, two plasterboard sheets as a cut-away, suspended ceiling) beside a
+  magnified "HEAD DETAIL" box (slab, deep-leg track, the stud stopping short with a GAP dimension, boards stopping
+  short, screws only below the legs, flexible sealant). The result sags the slab (labelled "movement exaggerated")
+  and the gap closes in the detail while the wall stays put. New `kind="board"` (light fill) in engine/three_d.py.
+  Note: the 3D edge depth test lets edges ~50mm behind a face show through, so thin linings like plasterboard read
+  slightly see-through; fine for the x-ray look.
 
 ### 2026-11-25: Caption question + build-replay sound
 - **What:** (1) new optional spec field `META["question"]`: one short, easy-to-answer question. `bp.caption(spec)`
@@ -274,18 +314,18 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
    API says `(#10) Application does not have permission`. Add `instagram_manage_insights` to the Meta app, generate a
    new Page token for the account with it ticked, and update the IG_ACCESS_TOKEN secret. Impact: unlocks every
    data-driven decision below.
-2. **Use the empty top band in every video:** turn the plan insets (015, 017, 018) and 015's detail bubble into engine
-   helpers (`inset()` frame + caption cycling, `detail_bubble()`). Impact: medium, more to look at during the 2D
-   steps, and less copy-paste in specs.
+2. **Use the empty top band in every video:** turn the plan insets (015, 017, 018) and the detail boxes (015's bubble,
+   020's HEAD DETAIL) into engine helpers (`inset()` frame + caption cycling, `detail_box()`). Impact: medium, more to
+   look at during the 2D steps, and less copy-paste in specs.
 3. **Faster 3D rendering in the post build:** 015's render took ~9 min on the runner (2 cores); cache the static
    parts' layer between frames or render the 3D at a lower supersample when it's moving fast. Impact: reliability
    (posts land closer to 7:30pm, more headroom).
-4. **On-screen number in the hook** (e.g. "90% OF THIS ROAD IS ROCK") where a safe, general figure exists. Impact: medium.
-5. **Judge the caption question after ~5 posts** (017-021): compare comments per post with the 16 before it (3 in
-   total). If no lift, try putting the question as the very first caption line instead. Impact: comments.
-6. **End card motion:** the last ~3s are a static "FOLLOW FOR MORE" over a dimmed frame; keep the 3D model slowly
-   orbiting behind it at higher brightness (no extra text, per the content rule). Impact: low-medium, retention at
-   the loop point.
+4. **Judge the caption question after ~5 posts** (017-021): compare comments per post with the 16 before it (3 in
+   total; 017 got 0). If no lift, try putting the question as the very first caption line instead. Impact: comments.
+5. **On-screen number in the hook** (e.g. "90% OF THIS ROAD IS ROCK") where a safe, general figure exists. Impact: medium.
+6. **Infrastructure hooks:** all three infrastructure posts are at the bottom. Next one should be the most relatable
+   (a bridge or road people use daily) with a surprise claim, or try a "you drive over this every day" framing.
+   Impact: lifts the weakest slot in the rotation.
 7. **Save / comment prompt on the end card.** Needs Mathew's OK first: the current content rule is that the end card
    says only "Follow for more". Impact: saves and comments.
 8. **Publish retry with a fresh container** for transient Instagram errors (no failures seen yet). Impact: reliability.
@@ -296,6 +336,8 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
 12. **Shared `arrow()` / `fill_poly()` helpers** in the engine (every recent spec copies them). Impact: low.
 13. **Drift focus on the active part** (optional per-step focus point). Impact: low-medium.
 14. **Cache pip wheels in post.yml** (`setup-python` `cache: pip`). Impact: low.
+15. **3D materials that read at a glance:** insulation and linings look alike in the blue palette; a hatched or
+    dotted face fill for batts would help (020). Impact: low.
 
 ## Tried and dropped
 
