@@ -75,7 +75,7 @@ def _norm(a):
 
 
 LIGHT_V = _norm((-0.4, 0.8, -0.5))   # in view space (depth axis points away)
-FILL = {"timber": 0.10, "concrete": 0.05, "steel": 0.16, "ground": 0.03, "eps": 0.22, "brick": 0.12, "glass": 0.30, "precast": 0.17, "membrane": 0.45}
+FILL = {"timber": 0.10, "concrete": 0.05, "steel": 0.16, "ground": 0.03, "eps": 0.22, "brick": 0.12, "glass": 0.30, "precast": 0.17, "membrane": 0.45, "board": 0.34}
 
 
 SS = 2                               # supersample factor for the 3D layer (anti-aliasing)
