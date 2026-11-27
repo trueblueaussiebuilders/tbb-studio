@@ -10,6 +10,7 @@ It renders frames across the whole video (and the cover) with the engine instrum
          (for 0.5s or more, so brief cross-fades don't count)
   ERROR  text running off the left/right edge, or key text in the bottom 20% (the Reels caption/UI area)
   ERROR  the 3D model running off the frame, into the header, or into the bottom 20%
+  ERROR  a label in the 2D section pushed out of the drawing area by the section camera (drift / auto focus)
   WARN   the 3D model drawn small (hard to read on a phone), or covering on-screen text
   WARN   hook scene longer than 4.5s, video longer than 75s
 Exit code 1 if there is any ERROR, so it can gate a commit or a workflow.
@@ -100,7 +101,7 @@ def _polyline_probe(ctx, pts, p, col, width=3.0, alpha=1.0, dash=None):
             break
         drawn.append(pts[i + 1]); acc += L
     dev = [ctx.user_to_device(*q) for q in drawn]
-    r = Rec("line", None, alpha, "line"); r.pts = dev; r.seq = _seq()
+    r = Rec("line", None, alpha, "line"); r.pts = dev; r.seq = _seq(); r.sec = _REC.get("sec", False)
     ctx._sink().append(r)
 
 
@@ -123,7 +124,7 @@ def _text_probe(ctx, s, x, y, size, col, alpha=1.0, bold=False, anchor="l", spac
     pts = [ctx.user_to_device(px, py) for px, py in ((x, y - 0.74 * size), (x + total, y - 0.74 * size),
                                                      (x, y + 0.2 * size), (x + total, y + 0.2 * size))]
     box = (min(p[0] for p in pts), min(p[1] for p in pts), max(p[0] for p in pts), max(p[1] for p in pts))
-    r = Rec(shown, box, alpha); r.seq = _seq()
+    r = Rec(shown, box, alpha); r.seq = _seq(); r.sec = _REC.get("sec", False)
     ctx._sink().append(r)
 
 
@@ -142,9 +143,20 @@ def _render_probe(ctx, parts, cam, alpha=1.0, highlight=None, appear=None, ghost
     ctx._sink().append(r)
 
 
+_section = bp._section
+
+
+def _section_probe(ctx, spec, tl, t):
+    fx, fy, z = bp.section_camera(spec, tl, t)         # text drawn now sits under the section camera (if it's on)
+    _REC["sec"] = not (z == 1.0 and (fx, fy) == bp.DRIFT_FOCUS)
+    try: _section(ctx, spec, tl, t)
+    finally: _REC["sec"] = False
+
+
 bp.text = _text_probe
 bp.polyline = _polyline_probe
 td.render = _render_probe
+bp._section = _section_probe
 _Context = cairo.Context
 
 
@@ -214,9 +226,17 @@ def frame_issues(recs, M, cover=False):
     models = [r for r in recs if r.kind == "3d"]
     for i, a in enumerate(txt):
         x0, y0, x1, y1 = a.box
-        if x1 > SAFE_X1 or x0 < SAFE_X0:
+        if (x1 > SAFE_X1 or x0 < SAFE_X0) and getattr(a, "sec", False):
+            out.append(("ERROR", "camera-cut", f"'{a.s}' is pushed past the {'right' if x1 > SAFE_X1 else 'left'} "
+                                               f"edge by the section camera", [a.box]))
+        elif x1 > SAFE_X1 or x0 < SAFE_X0:
             out.append(("ERROR", "off-edge", f"'{a.s}' runs off the {'right' if x1 > SAFE_X1 else 'left'} edge "
                                              f"(x {x0:.0f}-{x1:.0f})", [a.box]))
+        if getattr(a, "sec", False):                    # the section camera (drift / focus) clips the drawing here
+            cx0, cy0, cx1, cy1 = bp.DRIFT_CLIP
+            if x0 < cx0 - 3 or y0 < cy0 - 3 or x1 > cx1 + 3 or y1 > cy1 + 3:
+                out.append(("ERROR", "camera-cut", f"'{a.s}' is cut off by the section camera "
+                                                   f"(box {x0:.0f},{y0:.0f}-{x1:.0f},{y1:.0f})", [a.box]))
         if y1 > BOTTOM and not cover:
             out.append(("ERROR", "bottom-20", f"'{a.s}' is in the bottom 20% (y {y1:.0f} > {BOTTOM})", [a.box]))
         for b in txt[i + 1:]:
@@ -229,6 +249,10 @@ def frame_issues(recs, M, cover=False):
         bx0, by0, bx1, by1 = a.box[0] + 3, a.box[1] + 4, a.box[2] - 3, a.box[3] - 3
         for ln in lines:
             if ln.seq < a.seq: continue
+            if getattr(ln, "sec", False):              # section linework is clipped to the camera's drawing area
+                bx0, by0 = max(bx0, bp.DRIFT_CLIP[0]), max(by0, bp.DRIFT_CLIP[1])
+                bx1, by1 = min(bx1, bp.DRIFT_CLIP[2]), min(by1, bp.DRIFT_CLIP[3])
+                if bx0 >= bx1 or by0 >= by1: continue
             hit = False
             for (x0, y0), (x1, y1) in zip(ln.pts, ln.pts[1:]):
                 n = max(2, int(math.dist((x0, y0), (x1, y1)) / 3))
@@ -300,7 +324,7 @@ def check(folder, a):
         cov = -1 in f["times"]
         tt = [t for t in f["times"] if t >= 0]
         for r0, r1 in _ranges(tt, a.step):
-            if kind in ("overlap", "3d-over-text", "line-through-text") and r1 - r0 < 0.5 - 1e-6: continue  # brief cross-fades are fine
+            if kind in ("overlap", "3d-over-text", "line-through-text", "camera-cut") and r1 - r0 < 0.5 - 1e-6: continue  # brief cross-fades are fine
             issues.append((sev, kind, msg, f"t={r0:.2f}-{r1:.2f}s" if r1 > r0 else f"t={r0:.2f}s", (r0 + r1) / 2, f["boxes"]))
         if cov: issues.append((sev, kind, msg, "cover", None, f["boxes"]))
     if tim["hook"] > HOOK_MAX:

@@ -293,16 +293,136 @@ def section_zoom(spec, tl, t):
     return 1 + amt * z
 
 
+# ---------------------------------------------------------------- focus camera on the 2D section
+FOCUS_MAX = 1.2           # most the camera pushes in on a step's work (labels 28px -> up to ~34px on screen)
+FOCUS_MIN = 1.06          # below this the step's work already fills the drawing: keep the plain drift instead
+FOCUS_MARGIN = 36         # px kept around the step's work (and its labels) when framing it
+FOCUS_ARRIVE = 0.7        # s to glide onto (or off) the step's work: done before most labels start typing
+FOCUS_CREEP = 0.02        # extra slow push-in while holding, so the frame never sits still
+FOCUS_BACK = 0.8          # s into the result to ease back to the full drawing
+
+
+def _work_box(spec, tl, i):
+    """Box (x0, y0, x1, y1) the camera must keep in view for step i: the step's orange (newest) linework and labels
+    near the end of the step, plus every piece of text the section shows during the step (labels of any colour,
+    so pushing in never hides one). None if the step has no orange work to frame."""
+    import numpy as np
+    import cairo as _cairo                      # the real module (tools/check.py swaps this module's `cairo`)
+    boxes = []
+
+    def rec_text(ctx, s_, x, y, size, col, alpha=1.0, bold=False, anchor="l", spacing=0.0, chars=None):
+        orig(ctx, s_, x, y, size, col, alpha, bold, anchor, spacing, chars)
+        shown = s_[:chars] if chars is not None else s_
+        if alpha < 0.3 or not shown.strip(): return
+        font(ctx, size, bold)
+        w = ctx.text_extents(shown).x_advance + spacing * len(shown)
+        x0 = x - w / 2 if anchor == "c" else x - w if anchor == "r" else x
+        pts = [ctx.user_to_device(px, py) for px in (x0 - 6, x0 + w + 6) for py in (y - 0.8 * size, y + 0.3 * size)]
+        boxes.append((min(p[0] for p in pts), min(p[1] for p in pts), max(p[0] for p in pts), max(p[1] for p in pts)))
+
+    g = globals(); orig = g["text"]
+    had = "text" in vars(spec); spec_orig = vars(spec).get("text")
+    g["text"] = rec_text
+    if had: spec.text = rec_text
+    try:
+        t0, t1 = tl.step_start(i), tl.step_end(i)
+        for t in sorted({min(t0 + 1.0, t1 - 0.12), (t0 + t1) / 2, t1 - 0.12}):
+            s = _cairo.ImageSurface(_cairo.FORMAT_ARGB32, W, H)
+            spec.draw_section(_cairo.Context(s), t, tl)
+            s.flush()
+            if t == t1 - 0.12:
+                a = np.frombuffer(s.get_data(), np.uint8).reshape(H, s.get_stride() // 4, 4)[:, :W]
+                b, gg, r, al = (a[..., k].astype(np.int16) for k in range(4))      # premultiplied BGRA
+                m = (al > 120) & (r > 0.8 * al) & (gg > 0.35 * al) & (gg < 0.75 * al) & (b < 0.35 * al)
+                ys, xs = np.nonzero(m)
+                if len(xs) < 40: return None
+                boxes.append((float(xs.min()), float(ys.min()), float(xs.max()), float(ys.max())))
+    finally:
+        g["text"] = orig
+        if had: spec.text = spec_orig
+    return (min(b[0] for b in boxes), min(b[1] for b in boxes), max(b[2] for b in boxes), max(b[3] for b in boxes))
+
+
+def _clamp_focus(fx, fy, z):
+    """Keep the view inside the drawing area: never pan so far that the edge of the drawing comes into view."""
+    cx, cy = DRIFT_FOCUS
+    x0, y0, x1, y1 = DRIFT_CLIP
+    fx = clamp(fx, cx - (cx - x0) / z, cx + (x1 - cx) / z)
+    fy = clamp(fy, cy - (cy - y0) / z, cy + (y1 - cy) / z)
+    return fx, fy, z
+
+
+def focus_plan(spec, tl):
+    """Per-step camera targets [(fx, fy, z, focused)] for steps 1..N (index 0 = the hook: full drawing).
+
+    Auto focus (default): the camera frames the part each step is about. It finds the step's orange linework and
+    labels near the end of the step, and pushes in on that box (up to FOCUS_MAX, keeping FOCUS_MARGIN around it).
+    Steps whose work spans the whole drawing keep the plain slow drift (in on odd steps, out on even ones).
+    META["focus"] = False turns auto focus off (plain drift only); META["focus"] = {step: (x, y, zoom)} overrides
+    single steps by hand (zoom 1.0 = no push-in). META["drift"] = 0 turns the camera off entirely."""
+    key = (tl.hook, tuple(tl.tim["steps"]))
+    cache = getattr(spec, "_focus_cache", None)
+    if cache and cache[0] == key: return cache[1]
+    amt = spec.META.get("drift", DRIFT)
+    cx, cy = DRIFT_FOCUS
+    cfg = spec.META.get("focus", True)
+    manual = cfg if isinstance(cfg, dict) else {}
+    plan = [(cx, cy, 1.0, False)]
+    for i in range(1, tl.n + 1):
+        drift = (cx, cy, 1 + amt * (i % 2), False)
+        if i in manual:
+            x, y, z = manual[i]
+            plan.append(_clamp_focus(x, y, max(z, 1.0)) + (z > 1.0,)); continue
+        box = _work_box(spec, tl, i) if cfg else None
+        if box is None:
+            plan.append(drift); continue
+        bx0, by0, bx1, by1 = box
+        vx0, vy0, vx1, vy1 = DRIFT_CLIP
+        z = min(FOCUS_MAX, (vx1 - vx0) / (bx1 - bx0 + 2 * FOCUS_MARGIN), (vy1 - vy0) / (by1 - by0 + 2 * FOCUS_MARGIN))
+        if z < FOCUS_MIN:
+            plan.append(drift); continue
+        plan.append(_clamp_focus((bx0 + bx1) / 2, (by0 + by1) / 2, z) + (True,))
+    spec._focus_cache = (key, plan)
+    return plan
+
+
+def section_camera(spec, tl, t):
+    """(fx, fy, z): the drawing point shown at the centre of the drawing area, and the zoom, at time t.
+    Continuous through every cut: each step starts where the last one ended. Back to the full drawing early in the
+    result. Specs with META["drift"] = 0 get no camera."""
+    cx, cy = DRIFT_FOCUS
+    if not spec.META.get("drift", DRIFT) or t < tl.s(1) or t >= tl.res0 + FOCUS_BACK: return cx, cy, 1.0
+    plan = focus_plan(spec, tl)
+    # a step glides fast and then holds (with a slow creep) if it goes onto or off a focus; plain drift steps
+    # ease over the whole step, as before
+    fast = lambda i: i >= 1 and (plan[i][3] or plan[i - 1][3])
+    end = lambda i: (plan[i][0], plan[i][1], plan[i][2] * (1 + FOCUS_CREEP)) if fast(i) else plan[i][:3]
+    if t >= tl.res0:
+        a, b, u = end(tl.n), (cx, cy, 1.0), ease((t - tl.res0) / FOCUS_BACK)
+    else:
+        i = 1
+        while i < tl.n and t >= tl.step_end(i): i += 1
+        a, b = end(i - 1), plan[i][:3]
+        dur = max(tl.tim["steps"][i - 1], 0.1)
+        el = t - tl.step_start(i)
+        if fast(i):
+            u = ease(el / min(FOCUS_ARRIVE, 0.4 * dur))
+            b = (b[0], b[1], b[2] * (1 + FOCUS_CREEP * clamp(el / dur)))
+        else:
+            u = ease(el / dur)
+    return tuple(a[k] + (b[k] - a[k]) * u for k in range(3))
+
+
 def _section(ctx, spec, tl, t):
-    """spec.draw_section with the slow camera drift applied."""
-    z = section_zoom(spec, tl, t)
-    if z == 1.0:
+    """spec.draw_section with the camera applied (slow drift + auto focus on each step's work)."""
+    fx, fy, z = section_camera(spec, tl, t)
+    if z == 1.0 and (fx, fy) == DRIFT_FOCUS:
         spec.draw_section(ctx, t, tl); return
-    fx, fy = DRIFT_FOCUS
+    cx, cy = DRIFT_FOCUS
     ctx.save()
     x0, y0, x1, y1 = DRIFT_CLIP
     ctx.rectangle(x0, y0, x1 - x0, y1 - y0); ctx.clip()
-    ctx.translate(fx, fy); ctx.scale(z, z); ctx.translate(-fx, -fy)
+    ctx.translate(cx, cy); ctx.scale(z, z); ctx.translate(-fx, -fy)
     spec.draw_section(ctx, t, tl)
     ctx.restore()
 

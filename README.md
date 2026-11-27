@@ -51,8 +51,12 @@ so the hook scene stays under 4.5s. Check the layout automatically before commit
 ```
 python tools/check.py videos/002-tilt-up-panel      # or --queue for everything not yet posted; --out DIR saves problem frames
 ```
-The 2D drawing drifts slowly (push-in on odd steps, pull-back on even ones, up to 4.5%); keep key linework and
-labels at least ~25px inside the drawing area, or set `META["drift"] = 0` to turn it off. Step bodies show at
+The 2D drawing has a camera: on each step it glides onto that step's work (the orange linework and labels) and
+pushes in up to 1.2x, as long as every label on screen during the step stays in view; steps whose work fills the
+drawing get the old slow drift (in on odd steps, out on even ones). Draw the newest step's lines and labels in
+`tl.col(step, t)` (orange) so the camera can find them. `META["focus"] = False` keeps only the drift,
+`META["focus"] = {6: (x, y, 1.15)}` frames a step by hand, `META["drift"] = 0` turns the camera off. Keep key linework
+and labels at least ~25px inside the drawing area. Step bodies show at
 36px: keep them under ~80 characters so they stay at two lines.
 Leader labels: call the engine's `label(ctx, p, col, tip, elbow, txt, anchor, a)` (28px on a dark plate) rather than
 copying one into the spec; `gone(t, t0)` fades a label out once it's no longer relevant.

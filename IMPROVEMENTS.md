@@ -65,7 +65,50 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
   despite the caption question, but that's one post; keep judging over 5 (Backlog #4). 020 office partition follows
   the pattern with "this office wall has a gap at the top".
 
+- 2026-11-27: still likes only (insights permission not enabled). 013 post-tensioned slab 31, 008 steel portal frame
+  30, 014 curtain wall 29, 017 shower waterproofing 26, 012 road pavement 24, 004 timber wall frame 23, 015 roof
+  trusses 18, 003 10, 005 9, 016 noise wall 7, 009 6, 011 4, 018 concrete driveway 4 after ~13 hours, 006 3, 010 1,
+  001/002/007 0. 018 is the second slow start in three posts (016 was the other); 015, 017 had 16-23 at the same age.
+  018 was the first video with the looping end card, but 016 (before it) started just as slowly, so that's not the
+  cause on this evidence. 016 and 018 are both "outdoor/civil-works" topics with a hook about something people see
+  but don't think about; 012, 014, 017 worked with a claim that contradicts what people assume. Next picks keep the
+  "contradicts what you assume" form: 021 upstairs floor leads with "your upstairs floor is mostly air". Comments
+  still near zero with the caption question (017: 0, 018: 0); keep judging over 5 posts (Backlog #4).
+
 ## Changelog
+
+### 2026-11-27: Section camera frames each step's work (auto focus)
+- **What:** the 2D drawing's camera used to drift 4.5% in and out around the centre of the drawing on every step. Now,
+  on each step, it glides (0.7s) onto the part being built and pushes in up to 1.2x, then holds with a slow 2% creep.
+  The engine finds the work itself: it renders the section near the end of the step and takes the box around the
+  orange (newest) linework and labels, then widens it to every label shown during the step, so pushing in never hides
+  a label. If that box already fills the drawing (zoom under 1.06), the step keeps the old slow drift. The pan is
+  clamped so the edge of the drawing area never comes into view, and the camera eases back to the full drawing in the
+  first 0.8s of the result. `focus_plan()` / `section_camera()` / `_work_box()` in engine/blueprint.py (cached per
+  video, ~0.25s per video). Opt out with `META["focus"] = False` (drift only), override a step by hand with
+  `META["focus"] = {6: (x, y, 1.15)}`; `META["drift"] = 0` still turns the camera off.
+  tools/check.py now knows about the camera: a label pushed past the safe edge or out of the drawing area by the camera
+  is a `camera-cut` error (0.5s+, like overlaps), and section linework outside the camera's clip no longer counts as
+  drawn over the section label.
+- **Why:** review of 019-021 as a phone viewer: the small parts that each step is about (a tie-down bracket, a
+  strongback, starter bars, a duct) were a few dozen pixels on a phone, with most of the frame showing finished,
+  unchanged linework. A camera that moves to the work at each step makes the detail bigger and adds a purposeful
+  move at every cut (Backlog #13, done properly: automatic instead of a per-spec focus point).
+- **Checked:** tools/check.py --queue clean (019, 020, 021) with estimated timings and 019 again with its real voice
+  timings; before/after frames of 019, 020, 021 at 75% of each step (019 starter bars and 021 services pushed in
+  1.2x, labels ~34px instead of 28; steps that span the drawing unchanged); transition frames from the full 019 build
+  (smooth pan/zoom across the cut, no jump); old specs 001, 011, 013 still build; full local build of 019 (next to
+  post): 67.5s, audio and video lengths match (67.53 / 67.51s), -16.2 LUFS, true peak -1.2 dBFS.
+- **First video:** 019-transfer-beam (posts 2026-11-27) and every video after it. No spec changes needed.
+- **Files:** engine/blueprint.py, tools/check.py, README.md.
+
+### 2026-11-27 (content): 021 upstairs floor
+- Section through an upper floor: ground floor wall frames (cut, double top plates, the far wall's studs faint
+  behind), an open-web floor truss lowered onto the plates, tie-down brackets, edge trimmers, a strongback cut on edge
+  in the V at mid-span, a duct in an open triangle and a waste pipe through the webs, flooring sheets, upper wall
+  frames and a plasterboard ceiling on battens. The result lights up the open triangles ("mostly air"), adds a
+  "SPANS WALL TO WALL" dimension and runs water/air through the services. 3D: two bearing walls + far wall, eight
+  trusses dropping in one by one, strongback, services, flooring and upper walls over the far half only.
 
 ### 2026-11-26: End card keeps the 3D model and hands it back to the hook (seamless loop)
 - **What:** the end card used to dim everything to near-black and put "FOLLOW FOR MORE" in the middle of the frame,
@@ -334,9 +377,13 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
     Impact: low-medium; wait for watch-time data to confirm the bed helps.
 11. **Run tools/check.py in CI** (preview/post workflows, warning-only at first). Impact: reliability.
 12. **Shared `arrow()` / `fill_poly()` helpers** in the engine (every recent spec copies them). Impact: low.
-13. **Drift focus on the active part** (optional per-step focus point). Impact: low-medium.
+13. **Focus camera, phase 2:** steps whose labels sit at both ends of the drawing get no push-in today (e.g. 021 step 1,
+    020 steps 5-8). Option: let a label that belongs to an earlier step fade out before the camera arrives, or a
+    two-shot pan (left work, then right). Impact: low-medium.
 14. **Cache pip wheels in post.yml** (`setup-python` `cache: pip`). Impact: low.
-15. **3D materials that read at a glance:** insulation and linings look alike in the blue palette; a hatched or
+15. **Pipes and ducts in the 3D model:** 021's services barely read inside the trusses; a round member (`pipe()`, 8-12
+    sided) with a strong fill would. Impact: low.
+16. **3D materials that read at a glance:** insulation and linings look alike in the blue palette; a hatched or
     dotted face fill for batts would help (020). Impact: low.
 
 ## Tried and dropped
