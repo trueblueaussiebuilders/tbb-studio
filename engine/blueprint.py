@@ -271,12 +271,39 @@ def _model(spec):
     return spec._model3d_cache
 
 
-def _draw3d(ctx, spec, cy, yaw, alpha=1.0, appear=None, pitch=None, scale_mul=1.0, highlight=None, ghost=None):
+def _draw3d(ctx, spec, cy, yaw, alpha=1.0, appear=None, pitch=None, scale_mul=1.0, highlight=None, ghost=None,
+            hot_mix=1.0, hot_fill=0.0):
     from engine import three_d as td
     parts, cfg = _model(spec)
     cam = td.Camera(cfg["target"], yaw, cfg.get("pitch", 18) if pitch is None else pitch, cfg["dist"],
                     cfg["scale"] * scale_mul, 540, cy)
-    td.render(ctx, parts, cam, alpha=alpha, appear=appear, highlight=highlight, ghost=ghost)
+    td.render(ctx, parts, cam, alpha=alpha, appear=appear, highlight=highlight, ghost=ghost, hot_mix=hot_mix,
+              hot_fill=hot_fill)
+
+
+# ---------------------------------------------------------------- hook callout on the 3D model
+HOT_FILL = 0.42          # how strongly the hook's parts are tinted orange (faces); edges go fully orange
+HOT_POP = 0.35           # extra tint in the flash that lands with the orange punchline
+
+
+def hook_hot(spec):
+    """highlight(part) for the parts the hook is about (META["hook_hot"]), or None.
+    Entries are build orders (ints) or part kinds (strings), e.g. [2] or ["steel"] or [4, 5, 6, 7, 8].
+    Those parts are tinted orange in the hook, on the cover and as the end card loops back to the hook, so the
+    first frame shows exactly what the claim is about."""
+    hot = spec.META.get("hook_hot")
+    if not hot or not _model(spec): return None
+    orders = {h for h in hot if isinstance(h, int)}
+    kinds = {h for h in hot if isinstance(h, str)}
+    return lambda p: not p.base and (p.order in orders or p.kind in kinds)
+
+
+def hook_pop(spec, t):
+    """Hook callout tint at time t: on from frame 0, with a flash as the orange punchline pops in."""
+    last = len(spec.META["hook"]) - 1
+    tp = 0.6 + (last - 1) * 0.3                 # when the punchline pops (see draw_frame's hook block)
+    k = clamp((t - tp) / 0.12) * (1 - clamp((t - tp - 0.12) / 0.6))
+    return HOT_FILL + HOT_POP * k
 
 
 def section_zoom(spec, tl, t):
@@ -535,7 +562,9 @@ def draw_frame(spec, tl, t):
             tb = f0 * span + (1 - f0) * t + 0.1
             appear = lambda part: 1.0 if part.order == 0 else clamp((tb - span * part.order / n) / 0.45)
             yaw = cfg["yaw"] + 14 * (t / max(tl.hook, 1))
-            _draw3d(ctx, spec, cfg.get("cy_hook", 1010), yaw, alpha=a, appear=appear)
+            hl = hook_hot(spec)
+            _draw3d(ctx, spec, cfg.get("cy_hook", 1010), yaw, alpha=a, appear=appear, highlight=hl,
+                    hot_fill=hook_pop(spec, t) if hl else 0.0)
 
     # section label + the video's own drawing
     kx, xw = _xray_amount(spec, tl, t)
@@ -608,7 +637,9 @@ def draw_frame(spec, tl, t):
         k = clamp((t - tl.end0) / 0.4)
         ctx.set_source_rgba(*BG, 0.92 * k); ctx.paint()
         cy, yaw = end_motion(spec, tl, t)
-        _draw3d(ctx, spec, cy, yaw)                      # same model, same spot and angle as the result's last frame
+        hl = hook_hot(spec)                              # the hook's callout fades back in for the loop to frame 0
+        hm = clamp((t - tl.end0 - 0.6) / max(tl.duration - tl.end0 - 0.9, 0.5)) if hl else 0.0
+        _draw3d(ctx, spec, cy, yaw, highlight=hl, hot_mix=hm, hot_fill=HOT_FILL if hl else 0.0)  # same model, spot, angle
         kt = clamp((t - tl.end0 - 0.2) / 0.4)
         text(ctx, "FOLLOW FOR MORE", W / 2, END_TEXT_Y + (1 - ease(kt)) * 24, 64, WHITE, alpha=kt, bold=True, anchor="c")
         k2 = clamp((t - tl.end0 - 0.6) / 0.4)
@@ -644,7 +675,9 @@ def draw_cover(spec, tl):
     # finished drawing (3D hero shot if the video has a model), in the middle band
     if _model(spec):
         cfg = _model(spec)[1]
-        _draw3d(ctx, spec, cfg.get("cy_cover", 1000) + (len(lines) - 2) * 40, cfg["yaw"] - 8, scale_mul=cfg.get("cover_scale", 1.0))
+        hl = hook_hot(spec)
+        _draw3d(ctx, spec, cfg.get("cy_cover", 1000) + (len(lines) - 2) * 40, cfg["yaw"] - 8, scale_mul=cfg.get("cover_scale", 1.0),
+                highlight=hl, hot_fill=HOT_FILL if hl else 0.0)
     else:
         ctx.save(); ctx.translate(81, 330 + (len(lines) - 2) * 60); ctx.scale(0.85, 0.85)
         spec.draw_section(ctx, tl.end0 - 0.05, tl)

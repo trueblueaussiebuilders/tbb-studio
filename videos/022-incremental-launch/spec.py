@@ -14,6 +14,7 @@ META = {
     "cover": ["THIS BRIDGE", "WAS PUSHED", "ACROSS."],
     "question": "Would you have guessed this bridge was pushed into place? Yes or no below.",
     "hook_start": 0.5,                 # frame 0: abutments, piers and the first deck segments
+    "hook_hot": [4, 5, 6, 7, 8],       # hook callout (orange on the 3D model): the deck segments, the part that was pushed
     "xray": {"after_step": 1, "upto": 3, "hot": [2, 3]},   # piers + abutments in, the whole deck still a ghost
     "steps": [
         ("PIERS FIRST", "The piers and abutments are built across the valley before any deck exists."),

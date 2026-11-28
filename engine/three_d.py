@@ -136,9 +136,10 @@ def _seg(pcol, acov, zb, A, B, dA, dB, color, pa, hw):
     asb *= (1.0 - saf); asb += saf
 
 
-def render(ctx, parts, cam, alpha=1.0, highlight=None, appear=None, ghost=None):
+def render(ctx, parts, cam, alpha=1.0, highlight=None, appear=None, ghost=None, hot_mix=1.0, hot_fill=0.0):
     """Draw parts into a z-buffered layer, then composite onto ctx with `alpha`.
-    appear(part) -> 0..1 controls build-up (drop-in + fade). highlight(part) -> True paints edges orange.
+    appear(part) -> 0..1 controls build-up (drop-in + fade). highlight(part) -> True paints edges orange
+    (hot_mix 0..1 blends them in from white; hot_fill > 0 also tints their faces orange, for the hook callout).
     ghost(part) -> True draws that part as faint blue edges only (no faces), hidden behind solid parts:
     the "x-ray" look for parts that aren't built yet."""
     # gather visible parts; composite far -> near so build-up fades blend correctly
@@ -181,6 +182,8 @@ def render(ctx, parts, cam, alpha=1.0, highlight=None, appear=None, ghost=None):
             if _dot(n, fc) >= 0: continue                              # faces away from the camera
             shade = 0.35 + 0.65 * max(0.0, _dot(n, LIGHT_V))           # light from upper-left-front
             col = mix(BG, BLUE, FILL.get(part.kind, 0.1) + 0.25 * shade)
+            if hot_fill and highlight and highlight(part):
+                col = mix(col, ORANGE, clamp(hot_fill * hot_mix) * (0.55 + 0.45 * shade))
             P = [sp[i] for i in f]; D = [vv[i][2] for i in f]
             for i0, i1, i2 in _TRIS:
                 _tri(pcol, acov, zb, [P[i0], P[i1], P[i2]], [D[i0], D[i1], D[i2]], col, a)
@@ -188,10 +191,10 @@ def render(ctx, parts, cam, alpha=1.0, highlight=None, appear=None, ghost=None):
     # edges (hidden-line removed against the completed depth buffer), on top of the fills.
     # Every box edge is drawn and the per-pixel depth test hides the ones behind a surface.
     for cz, part, vv, sp, a in vis_parts:
-        hot = highlight and highlight(part)
-        edge = ORANGE if hot else WHITE
-        ea = a * (0.95 if hot else 0.8)
-        ew = (1.6 if part.kind != "ground" else 1.0) * SS / 2.0
+        hot = bool(highlight and highlight(part)) and hot_mix > 0
+        edge = mix(WHITE, ORANGE, hot_mix) if hot else WHITE
+        ea = a * (0.8 + 0.15 * hot_mix if hot else 0.8)
+        ew = (1.6 if part.kind != "ground" else 1.0) * (1 + 0.4 * hot_mix * bool(hot_fill) if hot else 1) * SS / 2.0
         for i, j in _EDGES:
             _seg(pcol, acov, zb, sp[i], sp[j], vv[i][2], vv[j][2], edge, ea, ew)
 

@@ -14,6 +14,7 @@ META = {
     "cover": ["THE UPSTAIRS", "FLOOR IS", "MOSTLY AIR."],
     "question": "Have you ever felt your upstairs floor bounce? Tell us below.",
     "hook_start": 0.5,
+    "hook_hot": ["steel"],             # hook callout (orange on the 3D model): the open steel webs: the 'air' in the floor
     "xray": {"after_step": 5, "upto": 11, "hot": [11]},   # trusses, trimmers, strongback in; services + floor still ghosts
     "steps": [
         ("GROUND WALLS", "The ground floor wall frames are stood, braced and checked level along the top plates."),

@@ -75,7 +75,50 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
   "contradicts what you assume" form: 021 upstairs floor leads with "your upstairs floor is mostly air". Comments
   still near zero with the caption question (017: 0, 018: 0); keep judging over 5 posts (Backlog #4).
 
+- 2026-11-28: still likes only (insights permission not enabled). 013 post-tensioned slab 31, 008 steel portal frame
+  30, 014 curtain wall 29, 017 shower waterproofing 26, 012 road pavement 24, 004 timber wall frame 23, 015 roof
+  trusses 18, 003 10, 005 9, 016 noise wall 7, 009 6, 018 concrete driveway 6 (after 1.5 days), 019 transfer beam 5
+  (after ~12 hours), 011 4, 006 3, 010 1, 001/002/007 0. Three of the last four posts started slowly (016, 018, 019;
+  only 017 broke out), against 16-23 likes on day one for 012-015. 019 was the first with the auto-focus camera and
+  018 the first with the looping end card, but 016 started just as slowly before either, so the likelier common
+  factor is the hook: 016/018/019 point at something the viewer can't see on screen ("hidden piles", "those cracks",
+  "these columns"), while 012/014/017's claims are about the thing shown. Today's change ties the hook's claim to
+  the 3D model (orange callout on the parts it's about). Caption question: 017, 018, 019 all 0 comments so far;
+  judge at 5 posts (Backlog #4). Infrastructure is still the weakest category; 022 tries the strongest
+  "contradicts what you assume" claim yet ("this bridge was pushed across").
+
 ## Changelog
+
+### 2026-11-28: Hook callout: the hook's claim lights up on the 3D model
+- **What:** new optional spec field `META["hook_hot"]`: the build orders (ints) or part kinds (strings) the hook is
+  about. Those parts are drawn with orange edges and an orange-tinted face from frame 0 of the hook, flash brighter as
+  the orange punchline pops in (in sync with the thump), are tinted on the cover too, and fade back in over the end
+  card so the loop into frame 0 still matches. `hook_hot()` / `hook_pop()` / `HOT_FILL` / `HOT_POP` in
+  engine/blueprint.py; `render(..., hot_mix=, hot_fill=)` in engine/three_d.py (x-ray highlights unchanged: edges
+  only, as before). Specs without the field build exactly as before. tools/check.py's 3D probe passes the new
+  arguments through.
+  Set on the queued videos: 020 `[3]` (the studs, cut short of the slab), 021 `["steel"]` (the open steel webs, the
+  "air"), 022 `[4, 5, 6, 7, 8]` (the deck segments that were pushed).
+- **Why:** review of 020/021 as a phone viewer: the hook's first frame was white text over an all-blue model, and
+  nothing on the model said which part the claim was about, so "mostly air" or "a gap at the top" had to be taken on
+  trust until the 2D steps 10+ seconds later. Likes: three of the last four posts started slowly, and their hooks
+  pointed at something not visible ("hidden piles", "those cracks", "these columns"). An orange callout on the
+  exact part gives the eye somewhere to go in the first second and makes the claim visible. It also gives the grid
+  covers a distinct orange accent instead of the same blue model every time.
+- **Checked:** before/after frames at t = 0, 0.8, 2.0 and covers for 020, 021, 022 (orange webs / studs / deck
+  clearly visible at phone size; 020 first tried the head tracks `[2]`, but the slab above hides them, so switched to
+  the studs); 021 end card (callout fades back in, last frame matches frame 0's colours); tools/check.py --queue
+  clean (020, 021, 022); old specs 001, 011, 013, 019 still build; full local build of 020 (next to post).
+- **First video:** 020-office-partition (posts 2026-11-28).
+- **Files:** engine/blueprint.py, engine/three_d.py, tools/check.py, README.md, videos/020, 021, 022 specs.
+
+### 2026-11-28 (content): 022 incremental launch
+- Elevation along a three-span bridge over a valley: piers and abutments, a casting yard and steel mould behind the
+  left abutment, segments cast one after another and the whole deck pushed forward one segment length at a time
+  (it actually slides across the drawing, glowing orange while it moves, with push arrows and a working jack), a
+  steel launching nose whose arrival at each pier flashes a ring, then the nose lifting off and permanent bearings.
+  The result marks "BUILT HERE" and a "PUSHED ACROSS" arrow. 3D: a valley with sloping banks (wedge parts made with
+  `Part()` directly), blade piers, box-girder segments ordered so the first one cast lands at the far end.
 
 ### 2026-11-27: Section camera frames each step's work (auto focus)
 - **What:** the 2D drawing's camera used to drift 4.5% in and out around the centre of the drawing on every step. Now,
@@ -385,6 +428,12 @@ Rules: older specs must keep building; evolve the look in steps; never touch the
     sided) with a strong fill would. Impact: low.
 16. **3D materials that read at a glance:** insulation and linings look alike in the blue palette; a hatched or
     dotted face fill for batts would help (020). Impact: low.
+
+17. **Hook callout, phase 2:** a short orange leader + 2-3 word tag on the 3D model in the hook (e.g. "GAP",
+    "STEEL WEBS"), placed from the hot parts' screen box. Impact: medium; makes the claim readable without sound.
+18. **Hook claims about what's on screen:** when writing hooks, prefer a claim about the thing the model shows
+    ("this bridge was pushed across") over one about something hidden ("stands on hidden piles"), and always set
+    `hook_hot`. Impact: content rule; judge against likes on 020-022.
 
 ## Tried and dropped
 

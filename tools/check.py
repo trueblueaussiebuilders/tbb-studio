@@ -128,8 +128,8 @@ def _text_probe(ctx, s, x, y, size, col, alpha=1.0, bold=False, anchor="l", spac
     ctx._sink().append(r)
 
 
-def _render_probe(ctx, parts, cam, alpha=1.0, highlight=None, appear=None, ghost=None):
-    _render(ctx, parts, cam, alpha=alpha, highlight=highlight, appear=appear, ghost=ghost)
+def _render_probe(ctx, parts, cam, alpha=1.0, highlight=None, appear=None, ghost=None, **kw):
+    _render(ctx, parts, cam, alpha=alpha, highlight=highlight, appear=appear, ghost=ghost, **kw)
     if not (_REC["on"] and isinstance(ctx, Probe)) or alpha <= 0.01: return
     # silhouette mask: render the model alone onto a transparent layer
     surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, bp.W, bp.H)

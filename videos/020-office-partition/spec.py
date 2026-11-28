@@ -14,6 +14,7 @@ META = {
     "cover": ["THE GAP AT", "THE TOP IS", "ON PURPOSE."],
     "question": "Did you know office walls are built to let the floor above move? Yes or no below.",
     "hook_start": 0.5,
+    "hook_hot": [3],                   # hook callout (orange on the 3D model): the studs, cut short of the slab
     "xray": {"after_step": 4, "upto": 3, "hot": [3]},     # tracks + studs in, batts and boards still ghosts
     "steps": [
         ("SET OUT", "The wall line is marked on the floor and plumbed up to the slab above."),

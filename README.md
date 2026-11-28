@@ -44,6 +44,9 @@ smoothly into frame 0 ("FOLLOW FOR MORE" sits above it); turn that off with `MET
 Every video gets a synthesised music bed ducked under the voice plus light sound effects (`engine/audio.py`);
 turn them off per video with `META["music"] = False` / `META["sfx"] = False` (the build replay's rising "tock" per part
 with `META["replay_sfx"] = False`).
+`META["hook_hot"]`: the build orders (ints) or part kinds (strings) the hook's claim is about, e.g. `[3]` or
+`["steel"]`. Those parts glow orange on the 3D model from frame 0 of the hook (flashing with the punchline), on the
+cover, and as the end card loops back; set it on every new video with a model.
 `META["question"]`: one short, easy-to-answer question; the caption puts it right after the first line (visible before
 "... more") to invite comments. Build the caption with `python -m engine.build videos/<slug> --caption-only`.
 Keep `NARRATION["hook"]` to one or two short sentences (about 12 words, no "Here's how": `hook_sub` says it on screen)
